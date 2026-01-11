@@ -43,6 +43,41 @@
             font-size: 1.1em;
         }
 
+        .agent-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 0 4px;
+        }
+
+        .agent-sql {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .agent-csharp {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .agent-epicor {
+            background: #10b981;
+            color: white;
+        }
+
+        .collaboration-mode {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: #f59e0b;
+            color: white;
+            margin-left: 8px;
+        }
+
         .status-indicator {
             display: inline-block;
             padding: 8px 16px;
@@ -354,6 +389,20 @@
                     <span class="example-tag" onclick="setQuery(this)">Create an ASP.NET Core controller</span>
                 </div>
 
+                <div class="example-queries" style="margin-top: 15px;">
+                    <h4>Epicor P21 Examples:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">How do I export P21 sales data?</span>
+                    <span class="example-tag" onclick="setQuery(this)">P21 API authentication example</span>
+                    <span class="example-tag" onclick="setQuery(this)">Query P21 customer table</span>
+                </div>
+
+                <div class="example-queries" style="margin-top: 15px;">
+                    <h4>🤝 Multi-Agent Collaboration:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">Write C# code to query P21 database</span>
+                    <span class="example-tag" onclick="setQuery(this)">Build a P21 integration API with async operations</span>
+                    <span class="example-tag" onclick="setQuery(this)">Export P21 orders using C# and SQL</span>
+                </div>
+
                 <textarea id="query-input" class="query-input" rows="4"
                     placeholder="Enter your question here..."></textarea>
 
@@ -492,38 +541,73 @@
             const panel = document.getElementById('results-panel');
             const content = document.getElementById('results-content');
 
-            if (data.agent === 'sql') {
-                // SQL response
-                content.innerHTML = `
-                    <h3>📝 Your Question</h3>
-                    <p style="color: #666; margin: 10px 0 20px 0;">${data.query}</p>
-
-                    <h3>🔍 Generated SQL</h3>
-                    <div class="sql-display">${escapeHtml(data.sql)}</div>
-
-                    <h3>📊 Query Results</h3>
-                    <div class="results-table">${escapeHtml(data.results)}</div>
-                `;
-            } else if (data.agent === 'csharp') {
-                // C#/.NET response
-                let html = `
-                    <h3>📝 Your Question</h3>
-                    <p style="color: #666; margin: 10px 0 20px 0;">${data.query}</p>
-
-                    <h3>💡 C# Expert Response</h3>
-                    <div class="results-table" style="white-space: pre-wrap;">${escapeHtml(data.response)}</div>
-                `;
-
-                if (data.code_example) {
-                    html += `
-                        <h3>💻 Code Example</h3>
-                        <div class="sql-display">${escapeHtml(data.code_example)}</div>
-                    `;
-                }
-
-                content.innerHTML = html;
+            // Build agent badges
+            let agentBadges = '';
+            if (data.agents_used) {
+                agentBadges = data.agents_used.map(agent => {
+                    return `<span class="agent-badge agent-${agent}">${agent.toUpperCase()}</span>`;
+                }).join('');
             }
 
+            // Build mode badge
+            let modeBadge = '';
+            if (data.mode && data.mode !== 'single') {
+                modeBadge = `<span class="collaboration-mode">${data.mode.toUpperCase()} COLLABORATION</span>`;
+            }
+
+            let html = `
+                <h3>📝 Your Question</h3>
+                <p style="color: #666; margin: 10px 0 20px 0;">${escapeHtml(data.query)}</p>
+                
+                <div style="margin-bottom: 20px;">
+                    ${agentBadges}
+                    ${modeBadge}
+                </div>
+            `;
+
+            // Show multi-agent collaboration
+            if (data.collaboration_session && data.collaboration_session.messages) {
+                html += `<h3>🤝 Agent Collaboration</h3>`;
+                
+                data.collaboration_session.messages.forEach((msg, idx) => {
+                    const agentClass = msg.agent.toLowerCase().includes('sql') ? 'sql' : 
+                                     msg.agent.toLowerCase().includes('csharp') || msg.agent.toLowerCase().includes('c#') ? 'csharp' : 
+                                     msg.agent.toLowerCase().includes('epicor') || msg.agent.toLowerCase().includes('p21') ? 'epicor' : 'sql';
+                    
+                    html += `
+                        <div style="margin: 20px 0; padding: 15px; background: #f9fafb; border-left: 4px solid var(--agent-color); border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0;">
+                                <span class="agent-badge agent-${agentClass}">${msg.agent}</span>
+                            </h4>
+                            <div style="white-space: pre-wrap; color: #374151;">${escapeHtml(msg.content)}</div>
+                        </div>
+                    `;
+                });
+            } else if (data.final_response) {
+                // Single agent or simple response
+                html += `
+                    <h3>💡 Response</h3>
+                    <div class="results-table" style="white-space: pre-wrap;">${escapeHtml(data.final_response)}</div>
+                `;
+            }
+
+            // Show SQL if available
+            if (data.sql) {
+                html += `
+                    <h3>🔍 Generated SQL</h3>
+                    <div class="sql-display">${escapeHtml(data.sql)}</div>
+                `;
+            }
+
+            // Show SQL results if available
+            if (data.sql_results) {
+                html += `
+                    <h3>📊 Query Results</h3>
+                    <div class="results-table">${escapeHtml(data.sql_results)}</div>
+                `;
+            }
+
+            content.innerHTML = html;
             panel.classList.add('show');
         }
 

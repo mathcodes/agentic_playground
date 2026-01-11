@@ -1,122 +1,258 @@
 """
-Router Agent - Determines which specialized agent to use.
-Analyzes user input and routes to SQL or C#/.NET agent.
+Router Agent - Multi-Agent Classification and Orchestration
+
+This agent analyzes user queries and determines:
+1. Which agent(s) should handle the query
+2. Whether multiple agents should collaborate
+3. The order of agent involvement
 """
 
 import anthropic
-import sys
+from typing import Dict, Any, List
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import config
 
-
-ROUTER_PROMPT = """You are a routing agent that classifies user queries into categories.
-
-Analyze the user's question and determine if it's about:
-1. **SQL/Database** - Questions about querying data, database operations, SQL syntax
-2. **C#/.NET** - Questions about C# code, .NET framework, ASP.NET, LINQ, etc.
-
-Respond with ONLY one word: "SQL" or "CSHARP"
-
-Examples:
-- "How many products are in the database?" → SQL
-- "Show me all orders from last month" → SQL
-- "How do I create a List in C#?" → CSHARP
-- "Write a LINQ query to filter users" → CSHARP
-- "What's the difference between IEnumerable and IQueryable?" → CSHARP
-- "Create an ASP.NET Core controller" → CSHARP
-- "Get the top 5 customers by revenue" → SQL
-
-Remember: Respond with ONLY "SQL" or "CSHARP", nothing else."""
-
-
-def route_query(user_input: str) -> dict:
-    """
-    Route the query to the appropriate agent.
+class RouterAgent:
+    """Routes queries to appropriate specialist agent(s) and manages collaboration"""
     
-    Args:
-        user_input: The user's natural language question
+    def __init__(self, api_key: str = None):
+        """Initialize the router agent"""
+        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError("ANTHROPIC_API_KEY is required")
         
-    Returns:
-        dict with keys:
-            - agent: str ("sql" or "csharp")
-            - confidence: str (reasoning from Claude)
-            - error: str (if routing failed)
-    """
-    if not config.ANTHROPIC_API_KEY:
-        return {
-            'agent': 'sql',  # Default fallback
-            'confidence': 'No API key, defaulting to SQL',
-            'error': 'ANTHROPIC_API_KEY not configured'
+        self.client = anthropic.Anthropic(api_key=self.api_key)
+        self.model = "claude-sonnet-4-20250514"
+        
+        # Available agents
+        self.available_agents = {
+            "sql": {
+                "name": "SQL Agent",
+                "expertise": ["database queries", "SQL", "data retrieval", "schema", "postgresql", "database design"],
+                "description": "Converts natural language to SQL queries and executes them"
+            },
+            "csharp": {
+                "name": "C# Agent",
+                "expertise": ["c#", "csharp", ".net", "programming", "linq", "async", "await", "code examples"],
+                "description": "Provides C# and .NET programming help, code generation, and explanations"
+            },
+            "epicor": {
+                "name": "Epicor P21 Agent",
+                "expertise": ["epicor", "p21", "erp", "export", "import", "p21 api", "p21 database", "erp integration"],
+                "description": "Specializes in Epicor P21 ERP system, exports, database, and API integration"
+            }
         }
     
-    try:
-        client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+    def route(self, query: str) -> Dict[str, Any]:
+        """
+        Analyze query and determine routing strategy
         
-        message = client.messages.create(
-            model=config.ANTHROPIC_MODEL,
-            max_tokens=50,
-            system=ROUTER_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": user_input
-                }
-            ]
-        )
-        
-        response = message.content[0].text.strip().upper()
-        
-        # Parse response
-        if 'SQL' in response:
-            return {
-                'agent': 'sql',
-                'confidence': 'High - SQL/Database query detected',
-                'error': None
-            }
-        elif 'CSHARP' in response or 'C#' in response:
-            return {
-                'agent': 'csharp',
-                'confidence': 'High - C#/.NET query detected',
-                'error': None
-            }
-        else:
-            # Default to SQL if unclear
-            return {
-                'agent': 'sql',
-                'confidence': f'Unclear response: {response}, defaulting to SQL',
-                'error': None
-            }
+        Returns:
+            Dict with:
+                - primary_agent: Main agent to handle query
+                - supporting_agents: List of agents that should collaborate
+                - collaboration_mode: 'sequential', 'parallel', or 'single'
+                - reasoning: Explanation of routing decision
+        """
+        try:
+            # Build the routing prompt
+            system_prompt = self._build_routing_prompt()
+            user_message = f"Analyze this query and determine routing:\n\nQuery: {query}"
             
-    except Exception as e:
+            # Call Claude to analyze the query
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=1024,
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": user_message
+                }]
+            )
+            
+            response_text = response.content[0].text
+            
+            # Parse the routing decision
+            routing = self._parse_routing_response(response_text, query)
+            
+            return routing
+            
+        except Exception as e:
+            # Default to SQL agent on error
+            return {
+                "primary_agent": "sql",
+                "supporting_agents": [],
+                "collaboration_mode": "single",
+                "reasoning": f"Error in routing, defaulting to SQL agent: {str(e)}",
+                "confidence": "low"
+            }
+    
+    def _build_routing_prompt(self) -> str:
+        """Build the system prompt for routing decisions"""
+        agents_desc = "\n".join([
+            f"- **{info['name']}**: {info['description']}\n  Expertise: {', '.join(info['expertise'])}"
+            for info in self.available_agents.values()
+        ])
+        
+        return f"""You are an intelligent routing agent that analyzes user queries and determines the best agent(s) to handle them.
+
+**Available Agents**:
+{agents_desc}
+
+**Routing Modes**:
+1. **Single Agent**: One agent can fully handle the query
+2. **Sequential Collaboration**: Agents work in order, each building on previous responses
+3. **Parallel Collaboration**: Multiple agents work simultaneously, then synthesize results
+
+**Analysis Guidelines**:
+
+1. **Identify Query Intent**: What is the user really asking for?
+
+2. **Match to Expertise**: Which agent(s) have the relevant knowledge?
+
+3. **Consider Complexity**: 
+   - Simple, focused queries → Single agent
+   - Queries spanning multiple domains → Collaboration
+   - Queries needing integration → Sequential collaboration
+   
+4. **Common Collaboration Scenarios**:
+   - P21 + SQL: Querying Epicor P21 database directly
+   - P21 + C#: Building P21 integrations or APIs
+   - SQL + C#: Database operations with C# code
+   - All three: Complete P21 integration solution with database and code
+
+**Response Format** (STRICT - must follow this format):
+```
+PRIMARY: <agent_key>
+SUPPORTING: <comma-separated agent_keys or "none">
+MODE: <single|sequential|parallel>
+CONFIDENCE: <high|medium|low>
+REASONING: <one sentence explanation>
+```
+
+**Examples**:
+
+Query: "Show me all customers"
+```
+PRIMARY: sql
+SUPPORTING: none
+MODE: single
+CONFIDENCE: high
+REASONING: Simple database query, SQL agent can handle alone
+```
+
+Query: "How do I export P21 sales data using C#?"
+```
+PRIMARY: epicor
+SUPPORTING: csharp, sql
+MODE: sequential
+CONFIDENCE: high
+REASONING: P21 export is primary need, C# for implementation, SQL for query structure
+```
+
+Query: "Write async code to query database"
+```
+PRIMARY: csharp
+SUPPORTING: sql
+MODE: sequential
+CONFIDENCE: high
+REASONING: C# async is primary, SQL for query syntax support
+```
+
+Query: "Build a P21 integration API with database caching"
+```
+PRIMARY: epicor
+SUPPORTING: csharp, sql
+MODE: sequential
+CONFIDENCE: medium
+REASONING: Complex integration requiring P21, API code, and database knowledge
+```
+
+Remember: More agents = better coverage but slower response. Only use collaboration when truly beneficial."""
+    
+    def _parse_routing_response(self, response_text: str, query: str) -> Dict[str, Any]:
+        """Parse Claude's routing decision"""
+        result = {
+            "primary_agent": "sql",  # Default
+            "supporting_agents": [],
+            "collaboration_mode": "single",
+            "reasoning": "Parsed from router response",
+            "confidence": "medium"
+        }
+        
+        lines = response_text.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip().strip('`')
+            if not line:
+                continue
+                
+            if line.startswith("PRIMARY:"):
+                agent = line.split(":", 1)[1].strip().lower()
+                if agent in self.available_agents:
+                    result["primary_agent"] = agent
+                    
+            elif line.startswith("SUPPORTING:"):
+                agents_str = line.split(":", 1)[1].strip().lower()
+                if agents_str != "none" and agents_str:
+                    agents = [a.strip() for a in agents_str.split(",")]
+                    result["supporting_agents"] = [a for a in agents if a in self.available_agents]
+                    
+            elif line.startswith("MODE:"):
+                mode = line.split(":", 1)[1].strip().lower()
+                if mode in ["single", "sequential", "parallel"]:
+                    result["collaboration_mode"] = mode
+                    
+            elif line.startswith("CONFIDENCE:"):
+                confidence = line.split(":", 1)[1].strip().lower()
+                if confidence in ["high", "medium", "low"]:
+                    result["confidence"] = confidence
+                    
+            elif line.startswith("REASONING:"):
+                result["reasoning"] = line.split(":", 1)[1].strip()
+        
+        # Fallback: Use keyword matching if parsing failed
+        if result["primary_agent"] == "sql" and result["confidence"] == "medium":
+            result = self._fallback_routing(query)
+        
+        return result
+    
+    def _fallback_routing(self, query: str) -> Dict[str, Any]:
+        """Fallback routing using keyword matching"""
+        query_lower = query.lower()
+        
+        # Count matches for each agent
+        scores = {agent: 0 for agent in self.available_agents.keys()}
+        
+        for agent_key, agent_info in self.available_agents.items():
+            for keyword in agent_info["expertise"]:
+                if keyword in query_lower:
+                    scores[agent_key] += 1
+        
+        # Determine primary agent (highest score)
+        primary = max(scores.items(), key=lambda x: x[1])[0]
+        
+        # Determine supporting agents (score > 0 and not primary)
+        supporting = [agent for agent, score in scores.items() 
+                     if score > 0 and agent != primary]
+        
+        # Determine mode
+        if len(supporting) == 0:
+            mode = "single"
+        elif len(supporting) <= 2:
+            mode = "sequential"
+        else:
+            mode = "sequential"  # Default to sequential for complex queries
+        
         return {
-            'agent': 'sql',  # Default fallback
-            'confidence': 'Error occurred, defaulting to SQL',
-            'error': str(e)
+            "primary_agent": primary,
+            "supporting_agents": supporting,
+            "collaboration_mode": mode,
+            "reasoning": f"Keyword matching: {primary} has {scores[primary]} matches",
+            "confidence": "low"
         }
 
 
-if __name__ == "__main__":
-    # Test the router
-    test_queries = [
-        "How many products do we have?",
-        "Show me all orders from last month",
-        "How do I create a List<string> in C#?",
-        "Write a LINQ query to filter users by age",
-        "What's the difference between IEnumerable and IQueryable?",
-        "Get the top 5 customers by revenue",
-        "Create an ASP.NET Core Web API controller",
-        "How do I use Entity Framework Core?",
-    ]
-    
-    print("Testing Router Agent")
-    print("=" * 60)
-    
-    for query in test_queries:
-        result = route_query(query)
-        print(f"\nQuery: {query}")
-        print(f"  → Agent: {result['agent'].upper()}")
-        print(f"  → Confidence: {result['confidence']}")
-        if result['error']:
-            print(f"  → Error: {result['error']}")
+def create_router(api_key: str = None) -> RouterAgent:
+    """Factory function to create a router agent"""
+    return RouterAgent(api_key=api_key)

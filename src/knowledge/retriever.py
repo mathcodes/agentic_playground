@@ -24,10 +24,11 @@ class KnowledgeBase:
         self.base_path = Path(base_path)
         self.sql_path = self.base_path / "sql"
         self.csharp_path = self.base_path / "csharp"
+        self.epicor_path = self.base_path / "epicor"
         self.shared_path = self.base_path / "shared"
         
         # Create directories if they don't exist
-        for path in [self.sql_path, self.csharp_path, self.shared_path]:
+        for path in [self.sql_path, self.csharp_path, self.epicor_path, self.shared_path]:
             path.mkdir(parents=True, exist_ok=True)
     
     def get_agent_docs(self, agent_type: str) -> List[Dict[str, str]]:
@@ -35,7 +36,7 @@ class KnowledgeBase:
         Get all documents for a specific agent.
         
         Args:
-            agent_type: 'sql', 'csharp', or 'shared'
+            agent_type: 'sql', 'csharp', 'epicor', or 'shared'
             
         Returns:
             List of dicts with 'title', 'content', 'path'
@@ -44,6 +45,8 @@ class KnowledgeBase:
             path = self.sql_path
         elif agent_type == 'csharp':
             path = self.csharp_path
+        elif agent_type == 'epicor':
+            path = self.epicor_path
         elif agent_type == 'shared':
             path = self.shared_path
         else:
@@ -66,7 +69,7 @@ class KnowledgeBase:
         Simple keyword-based search through agent documents.
         
         Args:
-            agent_type: 'sql', 'csharp', or 'shared'
+            agent_type: 'sql', 'csharp', 'epicor', or 'shared'
             query: Search query
             max_results: Maximum number of results to return
             

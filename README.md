@@ -1,15 +1,42 @@
-# Voice-to-SQL Agent
+# Multi-Agent AI System: Voice-to-SQL + C# + Epicor P21
 
-An agentic AI application that converts spoken natural language into SQL queries and executes them against a database.
+An advanced agentic AI application featuring **multi-agent collaboration** where specialized AI agents work together to solve complex problems involving databases, programming, and ERP systems.
 
-## Overview
+## 🎯 Overview
 
-This application:
-1. **Captures audio** from your microphone (or accepts audio files)
-2. **Transcribes speech** to text using OpenAI Whisper
-3. **Interprets intent** and generates SQL using an LLM (Claude)
-4. **Executes queries** against a PostgreSQL database
-5. **Returns results** in a human-readable format
+This application features **three specialized AI agents** that can work independently or collaborate:
+
+### 🤖 Specialized Agents
+
+1. **SQL Agent** - Database & Query Expert
+   - Converts natural language to SQL
+   - Executes queries against PostgreSQL
+   - Provides schema-aware query generation
+   - Optimizes and validates SQL
+
+2. **C# Agent** - Programming & .NET Expert
+   - Generates C# code examples
+   - Explains .NET concepts
+   - Provides LINQ patterns
+   - Demonstrates async/await best practices
+
+3. **Epicor P21 Agent** - ERP System Expert
+   - P21 data export/import guidance
+   - P21 database schema expertise
+   - P21 API integration examples
+   - ERP best practices
+
+### 🤝 Collaboration Modes
+
+- **Single Agent**: One agent handles straightforward queries
+- **Sequential Collaboration**: Agents work in order, building on each other's insights
+- **Parallel Collaboration**: Multiple agents provide independent perspectives
+
+### 🎙️ Voice & Text Input
+
+- Voice input via microphone (OpenAI Whisper)
+- Text input via web UI
+- Audio file processing
 
 ---
 
@@ -58,7 +85,9 @@ We'll build this incrementally. Each step is self-contained and testable.
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
+
+### Option 1: Web UI (Recommended)
 
 ```bash
 # Clone and enter project
@@ -72,45 +101,74 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your API keys
+export ANTHROPIC_API_KEY="your_key_here"
+export DATABASE_URL="postgresql://your_user@localhost:5432/voice_sql_test"
 
 # Initialize the database
 python scripts/init_db.py
 
-# Run the app
-python main.py
+# Start the web UI
+./start_ui.sh
+# Or: python web_ui.py
+
+# Open browser to http://localhost:5001
+```
+
+### Option 2: Command Line
+
+```bash
+# Text mode
+python main.py --text "Show me all products"
+
+# Voice mode (interactive)
+python main.py --mode interactive
+
+# Audio file
+python main.py --audio query.wav
 ```
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 voice-to-sql/
 ├── README.md
 ├── requirements.txt
-├── .env.example
-├── main.py                 # Entry point
-├── config.py               # Configuration management
+├── main.py                        # CLI entry point
+├── web_ui.py                      # Web UI server
+├── config.py                      # Configuration
 ├── scripts/
-│   └── init_db.py          # Database initialization
+│   └── init_db.py                 # Database initialization
 ├── src/
-│   ├── __init__.py
 │   ├── audio/
-│   │   ├── __init__.py
-│   │   ├── capture.py      # Microphone input
-│   │   └── transcribe.py   # Speech-to-text (Whisper)
+│   │   ├── capture.py             # Microphone input
+│   │   └── transcribe.py          # Speech-to-text (Whisper)
 │   ├── sql/
-│   │   ├── __init__.py
-│   │   ├── generator.py    # LLM-based SQL generation
-│   │   ├── executor.py     # Safe query execution
-│   │   └── schema.py       # Schema introspection
-│   └── agent/
-│       ├── __init__.py
-│       └── orchestrator.py # Main agent logic
-└── tests/
-    └── ...
+│   │   ├── generator.py           # SQL generation
+│   │   ├── executor.py            # Query execution
+│   │   └── schema.py              # Schema introspection
+│   ├── agent/
+│   │   ├── router.py              # 🧠 Router Agent (multi-agent routing)
+│   │   ├── orchestrator.py        # SQL Agent
+│   │   ├── csharp_agent.py        # C# Agent
+│   │   ├── epicor_agent.py        # Epicor P21 Agent
+│   │   ├── multi_agent_orchestrator.py  # Collaboration orchestrator
+│   │   └── collaboration.py       # Collaboration system
+│   └── knowledge/
+│       └── retriever.py           # Knowledge base retrieval
+├── knowledge_base/
+│   ├── sql/                       # SQL documentation
+│   ├── csharp/                    # C# documentation
+│   ├── epicor/                    # Epicor P21 documentation
+│   └── shared/                    # Shared knowledge
+├── templates/
+│   └── index.html                 # Web UI template
+└── docs/
+    ├── MULTI_AGENT_ARCHITECTURE.md
+    ├── COLLABORATION_GUIDE.md
+    ├── KNOWLEDGE_BASE_GUIDE.md
+    └── SQL_GENERATION_EXPLAINED.md
 ```
 
 ---
@@ -252,15 +310,17 @@ To enable write operations, set `ALLOW_WRITE_QUERIES=true` (use with caution).
 
 ---
 
-## Example Usage
+## 💡 Example Usage
 
+### Single Agent (SQL)
 ```
-🎤 Listening... (speak your query, then pause)
+Query: "Show me all products under $50"
 
-You said: "Show me all products under fifty dollars"
+🤖 Agent: SQL
+📊 Mode: SINGLE
 
 Generated SQL:
-  SELECT * FROM products WHERE price < 50;
+  SELECT * FROM products WHERE price < 50 AND delete_flag = 'N';
 
 Results:
   ┌────┬──────────────────┬───────┬──────────┐
@@ -270,6 +330,68 @@ Results:
   │ 7  │ Work Gloves      │ 8.50  │ PPE      │
   │ 12 │ Cable Ties (100) │ 4.99  │ Supplies │
   └────┴──────────────────┴───────┴──────────┘
+```
+
+### Multi-Agent Collaboration
+```
+Query: "Write C# code to query P21 database for top customers"
+
+🤖 Agents: EPICOR, SQL, C#
+🔄 Mode: SEQUENTIAL COLLABORATION
+
+--- Epicor P21 Specialist ---
+For P21 customer queries, use the `customer` table joined with `invoice_hdr`
+for revenue calculations. Key considerations:
+- Filter by delete_flag = 'N' and active_flag = 'Y'
+- Use proper date ranges for revenue calculations
+- Consider P21 version-specific schema differences
+
+--- SQL Specialist ---
+SELECT TOP 10
+    c.customer_id,
+    c.customer_name,
+    SUM(ih.invoice_total) AS total_revenue
+FROM customer c
+INNER JOIN invoice_hdr ih ON c.customer_id = ih.customer_id
+WHERE c.delete_flag = 'N' AND c.active_flag = 'Y'
+    AND ih.invoice_date >= DATEADD(year, -1, GETDATE())
+GROUP BY c.customer_id, c.customer_name
+ORDER BY total_revenue DESC;
+
+--- C# Specialist ---
+public async Task<List<Customer>> GetTopCustomersAsync()
+{
+    using var connection = new SqlConnection(_p21ConnectionString);
+    await connection.OpenAsync();
+    
+    var query = @"
+        SELECT TOP 10
+            c.customer_id AS CustomerId,
+            c.customer_name AS CustomerName,
+            SUM(ih.invoice_total) AS TotalRevenue
+        FROM customer c
+        INNER JOIN invoice_hdr ih ON c.customer_id = ih.customer_id
+        WHERE c.delete_flag = 'N' AND c.active_flag = 'Y'
+            AND ih.invoice_date >= DATEADD(year, -1, GETDATE())
+        GROUP BY c.customer_id, c.customer_name
+        ORDER BY TotalRevenue DESC";
+    
+    var customers = new List<Customer>();
+    using var command = new SqlCommand(query, connection);
+    using var reader = await command.ExecuteReaderAsync();
+    
+    while (await reader.ReadAsync())
+    {
+        customers.Add(new Customer
+        {
+            CustomerId = reader.GetString(0),
+            CustomerName = reader.GetString(1),
+            TotalRevenue = reader.GetDecimal(2)
+        });
+    }
+    
+    return customers;
+}
 ```
 
 ---
@@ -290,16 +412,56 @@ Results:
 
 ---
 
-## Next Steps / Future Enhancements
+## 📚 Documentation
 
-- [ ] Add conversation memory (multi-turn queries)
-- [ ] Support for query refinement ("show me only the first 5")
+- **[Collaboration Guide](COLLABORATION_GUIDE.md)** - How agents work together
+- **[Multi-Agent Architecture](MULTI_AGENT_ARCHITECTURE.md)** - System design
+- **[Knowledge Base Guide](KNOWLEDGE_BASE_GUIDE.md)** - Adding documents
+- **[SQL Generation Explained](SQL_GENERATION_EXPLAINED.md)** - AI reasoning
+- **[Setup Guide](SETUP_GUIDE.md)** - Detailed setup instructions
+
+## 🎨 Web UI Features
+
+- **Real-time Agent Logging**: Watch agents collaborate live
+- **Agent Badges**: See which agents are involved
+- **Collaboration Mode Indicators**: Single, Sequential, or Parallel
+- **Agent Discussions**: View each agent's contribution
+- **Formatted Results**: SQL, code, and data beautifully displayed
+- **Example Queries**: One-click examples for each agent
+
+## 🔧 Key Features
+
+✅ **Multi-Agent Collaboration** - Agents discuss and build on each other's insights  
+✅ **Intelligent Routing** - AI determines which agents to involve  
+✅ **Knowledge Base** - Each agent has domain-specific documentation  
+✅ **Voice Input** - Speak your queries naturally  
+✅ **Web UI** - Beautiful, real-time interface  
+✅ **Safety First** - Read-only by default, validated queries  
+✅ **Schema-Aware** - Understands your database structure  
+✅ **Extensible** - Easy to add new agents  
+
+## 🚀 Next Steps / Future Enhancements
+
+- [ ] Add more specialized agents (Python, Java, etc.)
+- [ ] Agent memory and learning
+- [ ] Conversation history (multi-turn queries)
 - [ ] Voice output of results
-- [ ] Web UI interface
 - [ ] Support for multiple database backends
+- [ ] Agent performance metrics
+- [ ] Custom agent configurations
+
+## 🤝 Contributing
+
+Contributions welcome! Areas of interest:
+- New specialized agents
+- Knowledge base documents
+- UI improvements
+- Performance optimizations
+
+## 📄 License
+
+MIT
 
 ---
 
-## License
-
-MIT
+**Built with:** Python, Flask, Anthropic Claude Sonnet 4, PostgreSQL, OpenAI Whisper

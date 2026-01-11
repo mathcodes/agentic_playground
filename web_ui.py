@@ -58,7 +58,7 @@ def get_config():
 
 @app.route('/api/query', methods=['POST'])
 def process_query():
-    """Process a text query"""
+    """Process a text query with multi-agent collaboration"""
     data = request.json
     query = data.get('query', '').strip()
     
@@ -75,44 +75,42 @@ def process_query():
     
     orchestrator = MultiAgentOrchestrator(on_status=status_callback, verbose=False)
     
-    # Process in background thread and stream logs
+    # Process the query
     def process():
         try:
             logger.log("start", f"Processing query: {query}", "info")
             
-            # Multi-agent processing
+            # Multi-agent processing with collaboration
             result = orchestrator.process_query(query)
             
             if result.success:
-                # Handle SQL agent response
-                if result.agent_used.value == 'sql':
-                    logger.log("sql_generation", f"Generated SQL: {result.sql}", "success")
-                    logger.log("execution", "Query executed successfully", "success")
-                    logger.log("complete", "Pipeline complete!", "success")
-                    
-                    return {
-                        'success': True,
-                        'query': query,
-                        'agent': 'sql',
-                        'sql': result.sql,
-                        'results': result.sql_results,
-                        'raw_results': None
-                    }
-                # Handle C# agent response
-                else:
-                    logger.log("csharp_response", "Generated C# response", "success")
-                    logger.log("complete", "Pipeline complete!", "success")
-                    
-                    return {
-                        'success': True,
-                        'query': query,
-                        'agent': 'csharp',
-                        'response': result.csharp_response,
-                        'code_example': result.code_example,
-                        'results': result.csharp_response
-                    }
+                logger.log("complete", "Multi-agent collaboration complete!", "success")
+                
+                # Build response with collaboration details
+                response_data = {
+                    'success': True,
+                    'query': query,
+                    'mode': result.mode,
+                    'agents_used': result.agents_used,
+                    'confidence': result.routing_confidence,
+                    'final_response': result.final_response,
+                    'collaboration_session': result.collaboration_session
+                }
+                
+                # Add agent-specific data
+                if result.sql:
+                    response_data['sql'] = result.sql
+                    response_data['sql_results'] = result.sql_results
+                
+                if result.csharp_response:
+                    response_data['csharp_response'] = result.csharp_response
+                
+                if result.epicor_response:
+                    response_data['epicor_response'] = result.epicor_response
+                
+                return response_data
             else:
-                error_msg = result.execution_error or "Unknown error"
+                error_msg = result.execution_error or result.routing_error or "Unknown error"
                 logger.log("error", f"Error: {error_msg}", "error")
                 return {
                     'success': False,
@@ -121,6 +119,8 @@ def process_query():
                 
         except Exception as e:
             logger.log("error", f"Exception: {str(e)}", "error")
+            import traceback
+            traceback.print_exc()
             return {
                 'success': False,
                 'error': str(e)

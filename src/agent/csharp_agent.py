@@ -1,17 +1,88 @@
 """
 C# / .NET Specialized Agent
 Handles questions about C# programming, .NET framework, and related technologies.
+Supports multi-agent collaboration.
 """
 
 import anthropic
-import sys
+from typing import Dict, Any, List, Optional
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import config
 
-
-CSHARP_SYSTEM_PROMPT = """You are an expert C# and .NET developer assistant.
+class CSharpAgent:
+    """Agent specialized in C# and .NET development"""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """Initialize the C# agent"""
+        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError("ANTHROPIC_API_KEY is required")
+        
+        self.client = anthropic.Anthropic(api_key=self.api_key)
+        self.model = "claude-sonnet-4-20250514"
+        self.agent_name = "C# Specialist"
+    
+    def process(
+        self, 
+        query: str, 
+        knowledge_context: str = "",
+        collaboration_context: Optional[List[Dict[str, str]]] = None
+    ) -> Dict[str, Any]:
+        """
+        Process a C#/.NET query
+        
+        Args:
+            query: User's question about C#/.NET
+            knowledge_context: Relevant documents from knowledge base
+            collaboration_context: Previous agent responses for collaboration
+            
+        Returns:
+            Dict with response, code examples, and collaboration info
+        """
+        system_prompt = self._build_system_prompt(knowledge_context, collaboration_context)
+        user_message = self._build_user_message(query, collaboration_context)
+        
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=4096,
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": user_message
+                }]
+            )
+            
+            response_text = response.content[0].text
+            
+            # Extract code blocks
+            code_example = None
+            if '```csharp' in response_text or '```c#' in response_text:
+                import re
+                code_blocks = re.findall(r'```(?:csharp|c#)\n(.*?)```', response_text, re.DOTALL)
+                if code_blocks:
+                    code_example = '\n\n'.join(code_blocks)
+            
+            return {
+                "agent": self.agent_name,
+                "success": True,
+                "response": response_text,
+                "code_example": code_example,
+                "has_code": code_example is not None,
+                "collaboration_enabled": collaboration_context is not None
+            }
+            
+        except Exception as e:
+            return {
+                "agent": self.agent_name,
+                "success": False,
+                "error": str(e),
+                "response": f"Error processing C# query: {str(e)}"
+            }
+    
+    def _build_system_prompt(self, knowledge_context: str, collaboration_context: Optional[List[Dict[str, str]]]) -> str:
+        """Build the system prompt"""
+        prompt = """You are an expert C# and .NET developer assistant.
 
 Your expertise includes:
 - C# language features (all versions up to C# 12)
@@ -32,6 +103,35 @@ When answering:
 5. Format code with proper syntax highlighting hints
 
 Keep responses focused and practical. If asked for code, provide complete, working examples."""
+
+        if collaboration_context:
+            prompt += """
+
+**Collaboration Mode**:
+You are working with other specialist agents. Review their insights and build upon them with your C#/.NET expertise.
+- Add value with C#-specific knowledge
+- Reference other agents' contributions when relevant
+- Suggest when additional expertise might be needed"""
+
+        if knowledge_context:
+            prompt += f"\n\n**Knowledge Base Context**:\n{knowledge_context}"
+        
+        return prompt
+    
+    def _build_user_message(self, query: str, collaboration_context: Optional[List[Dict[str, str]]]) -> str:
+        """Build the user message with optional collaboration context"""
+        message = f"User Query: {query}\n\n"
+        
+        if collaboration_context:
+            message += "**Previous Agent Insights**:\n\n"
+            for context in collaboration_context:
+                agent = context.get("agent", "Unknown Agent")
+                response = context.get("response", "")
+                message += f"--- {agent} ---\n{response}\n\n"
+            
+            message += "**Your Task**: Provide your C#/.NET expertise, building upon the insights above.\n"
+        
+        return message
 
 
 def process_csharp_query(user_query: str) -> dict:
