@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice-to-SQL Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .status-ready {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .query-panel,
+        .log-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .instructions {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .instructions h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            color: #1e3a8a;
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .instructions li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+        }
+
+        .example-queries {
+            margin-bottom: 20px;
+        }
+
+        .example-queries h4 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .example-tag {
+            display: inline-block;
+            background: #f3f4f6;
+            color: #4b5563;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-tag:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            transition: border 0.3s;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+            margin-top: 10px;
+        }
+
+        .log-container {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            color: #93c5fd;
+        }
+
+        .log-working {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid #fbbf24;
+            color: #fcd34d;
+        }
+
+        .log-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid #10b981;
+            color: #6ee7b7;
+        }
+
+        .log-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        .log-time {
+            color: #64748b;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+
+        .results-panel {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+
+        .results-panel.show {
+            display: block;
+        }
+
+        .sql-display {
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .results-table {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Voice-to-SQL Agent</h1>
+            <p>Convert natural language questions into SQL queries with AI</p>
+            <div id="status-indicator" class="status-indicator status-error">
+                Checking system status...
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="query-panel">
+                <div class="panel-title">Query Input</div>
+
+                <div class="instructions">
+                    <h3>📝 How to Use:</h3>
+                    <ul>
+                        <li>Type a natural language question about the database</li>
+                        <li>The agent will generate SQL using Claude AI</li>
+                        <li>Watch the log panel for real-time progress</li>
+                        <li>Results will appear below</li>
+                    </ul>
+                </div>
+
+                <div class="example-queries">
+                    <h4>SQL Examples:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">How many products do we have?</span>
+                    <span class="example-tag" onclick="setQuery(this)">Show me all orders from last month</span>
+                    <span class="example-tag" onclick="setQuery(this)">What are the top 5 customers by sales?</span>
+                    <span class="example-tag" onclick="setQuery(this)">List products under $50</span>
+                </div>
+
+                <div class="example-queries" style="margin-top: 15px;">
+                    <h4>C#/.NET Examples:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">How do I create a List in C#?</span>
+                    <span class="example-tag" onclick="setQuery(this)">Write a LINQ query to filter users</span>
+                    <span class="example-tag" onclick="setQuery(this)">Explain async/await in C#</span>
+                    <span class="example-tag" onclick="setQuery(this)">Create an ASP.NET Core controller</span>
+                </div>
+
+                <textarea id="query-input" class="query-input" rows="4"
+                    placeholder="Enter your question here..."></textarea>
+
+                <button id="submit-btn" class="button" onclick="submitQuery()">
+                    🚀 Generate SQL & Execute
+                </button>
+
+                <button class="button button-secondary" onclick="testConnection()">
+                    🔌 Test Database Connection
+                </button>
+            </div>
+
+            <div class="log-panel">
+                <div class="panel-title">Agent Progress Log</div>
+                <div id="log-container" class="log-container">
+                    <div class="log-entry log-info">
+                        <span class="log-time">--:--:--</span>
+                        Waiting for query...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-panel" class="results-panel">
+            <div class="panel-title">Results</div>
+            <div id="results-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource;
+
+        // Check system status on load
+        window.onload = function () {
+            checkStatus();
+            initLogStream();
+        };
+
+        function checkStatus() {
+            fetch('/api/config')
+                .then(r => r.json())
+                .then(data => {
+                    const indicator = document.getElementById('status-indicator');
+                    if (data.ready) {
+                        indicator.className = 'status-indicator status-ready';
+                        indicator.textContent = '✅ System Ready';
+                    } else {
+                        indicator.className = 'status-indicator status-error';
+                        indicator.textContent = '⚠️ ' + (data.errors[0] || 'Configuration incomplete');
+                    }
+                })
+                .catch(err => {
+                    console.error('Status check failed:', err);
+                });
+        }
+
+        function initLogStream() {
+            // Initialize Server-Sent Events for logs
+            eventSource = new EventSource('/api/logs');
+            eventSource.onmessage = function (event) {
+                const log = JSON.parse(event.data);
+                addLogEntry(log);
+            };
+        }
+
+        function addLogEntry(log) {
+            const container = document.getElementById('log-container');
+            const entry = document.createElement('div');
+
+            const statusClass = 'log-' + log.status;
+            const timestamp = new Date(log.timestamp * 1000).toLocaleTimeString();
+
+            entry.className = 'log-entry ' + statusClass;
+            entry.innerHTML = `
+                <span class="log-time">${timestamp}</span>
+                <strong>[${log.step}]</strong> ${log.message}
+            `;
+
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            const container = document.getElementById('log-container');
+            container.innerHTML = '<div class="log-entry log-info"><span class="log-time">--:--:--</span>Starting new query...</div>';
+        }
+
+        function setQuery(element) {
+            document.getElementById('query-input').value = element.textContent;
+        }
+
+        function submitQuery() {
+            const query = document.getElementById('query-input').value.trim();
+
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            // Disable button and show loading
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Processing...';
+
+            // Clear logs and hide results
+            clearLogs();
+            document.getElementById('results-panel').classList.remove('show');
+
+            // Submit query
+            fetch('/api/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: query })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 Generate SQL & Execute';
+
+                    if (data.success) {
+                        showResults(data);
+                    } else {
+                        showError(data.error);
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 Generate SQL & Execute';
+                    showError('Request failed: ' + err.message);
+                });
+        }
+
+        function showResults(data) {
+            const panel = document.getElementById('results-panel');
+            const content = document.getElementById('results-content');
+
+            if (data.agent === 'sql') {
+                // SQL response
+                content.innerHTML = `
+                    <h3>📝 Your Question</h3>
+                    <p style="color: #666; margin: 10px 0 20px 0;">${data.query}</p>
+
+                    <h3>🔍 Generated SQL</h3>
+                    <div class="sql-display">${escapeHtml(data.sql)}</div>
+
+                    <h3>📊 Query Results</h3>
+                    <div class="results-table">${escapeHtml(data.results)}</div>
+                `;
+            } else if (data.agent === 'csharp') {
+                // C#/.NET response
+                let html = `
+                    <h3>📝 Your Question</h3>
+                    <p style="color: #666; margin: 10px 0 20px 0;">${data.query}</p>
+
+                    <h3>💡 C# Expert Response</h3>
+                    <div class="results-table" style="white-space: pre-wrap;">${escapeHtml(data.response)}</div>
+                `;
+
+                if (data.code_example) {
+                    html += `
+                        <h3>💻 Code Example</h3>
+                        <div class="sql-display">${escapeHtml(data.code_example)}</div>
+                    `;
+                }
+
+                content.innerHTML = html;
+            }
+
+            panel.classList.add('show');
+        }
+
+        function showError(error) {
+            const panel = document.getElementById('results-panel');
+            const content = document.getElementById('results-content');
+
+            content.innerHTML = `
+                <h3 style="color: #ef4444;">❌ Error</h3>
+                <div class="sql-display" style="color: #fca5a5;">${escapeHtml(error)}</div>
+                <p style="margin-top: 15px; color: #666;">
+                    Make sure:<br>
+                    • Database is initialized (run: python scripts/init_db.py)<br>
+                    • ANTHROPIC_API_KEY is set<br>
+                    • PostgreSQL is running
+                </p>
+            `;
+
+            panel.classList.add('show');
+        }
+
+        function testConnection() {
+            clearLogs();
+            fetch('/api/test_connection')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Database connection successful!');
+                    } else {
+                        alert('❌ Connection failed: ' + data.error);
+                    }
+                });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle Enter key
+        document.getElementById('query-input').addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                submitQuery();
+            }
+        });
+    </script>
+</body>
+
+</html>
