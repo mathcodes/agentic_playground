@@ -1,8 +1,12 @@
+# =============================================================================
+# PRODUCTION DEPENDENCIES
+# =============================================================================
+
 # Database
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9         # PostgreSQL adapter
 
 # AI / LLM
-anthropic==0.39.0
+anthropic==0.75.0              # Claude API (upgraded for security)
 
 # Speech-to-Text (Whisper runs locally)
 openai-whisper==20231117
@@ -13,10 +17,42 @@ sounddevice==0.4.6
 soundfile==0.12.1
 numpy>=1.24.0
 
-# Utilities
-python-dotenv==1.0.0
-rich==13.7.0          # Pretty console output
-tabulate==0.9.0       # Table formatting
+# Web Framework
+flask==3.0.0                   # Web framework
+flask-cors==4.0.0              # Cross-Origin Resource Sharing
 
-# Development
-pytest==7.4.0
+# SECURITY: Authentication & Authorization
+pyjwt==2.8.0                   # JSON Web Tokens for authentication
+bcrypt==4.1.2                  # Secure password hashing
+cryptography==42.0.0           # Cryptographic operations
+
+# Utilities
+python-dotenv==1.0.0           # Environment variable management
+rich==13.7.0                   # Pretty console output
+tabulate==0.9.0                # Table formatting
+
+# =============================================================================
+# DEVELOPMENT DEPENDENCIES
+# =============================================================================
+
+# Testing
+pytest==7.4.0                  # Testing framework
+pytest-cov==4.1.0              # Code coverage
+pytest-mock==3.12.0            # Mocking support
+
+# Code Quality
+black==23.12.1                 # Code formatting
+flake8==7.0.0                  # Linting
+mypy==1.7.1                    # Type checking
+pylint==3.0.3                  # Code analysis
+
+# Security Scanning
+safety==3.0.1                  # Dependency vulnerability scanning
+bandit==1.7.6                  # Security issue detection
+
+# =============================================================================
+# PRODUCTION SERVER (OPTIONAL - for production deployment)
+# =============================================================================
+# Uncomment these for production deployment:
+# gunicorn==21.2.0             # Production WSGI server
+# gevent==23.9.1               # Async worker support

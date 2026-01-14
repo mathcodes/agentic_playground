@@ -111,7 +111,7 @@ python scripts/init_db.py
 ./start_ui.sh
 # Or: python web_ui.py
 
-# Open browser to http://localhost:5001
+# Open browser to http://localhost:5000
 ```
 
 ### Option 2: Command Line

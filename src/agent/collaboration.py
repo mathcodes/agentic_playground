@@ -155,14 +155,19 @@ class CollaborationManager:
             agent_name = agent.agent_name if hasattr(agent, 'agent_name') else agent_key.upper()
             
             # Get knowledge context if available
+            # FIXED: Correct method name and parameter order
+            # The KnowledgeBase class has get_context_for_query(agent_type, query)
+            # not retrieve(query, agent_type)
             knowledge_context = ""
             if knowledge_retriever:
                 try:
-                    knowledge_context = knowledge_retriever.retrieve(
-                        session.query,
-                        agent_type=agent_key
+                    knowledge_context = knowledge_retriever.get_context_for_query(
+                        agent_type=agent_key,
+                        query=session.query
                     )
-                except:
+                except Exception as e:
+                    # Log the error for debugging (was silently failing before)
+                    print(f"Warning: Failed to retrieve knowledge context for {agent_key}: {e}")
                     pass
             
             # Get collaboration context (previous agent responses)
@@ -228,14 +233,19 @@ class CollaborationManager:
             agent_name = agent.agent_name if hasattr(agent, 'agent_name') else agent_key.upper()
             
             # Get knowledge context if available
+            # FIXED: Correct method name and parameter order
+            # The KnowledgeBase class has get_context_for_query(agent_type, query)
+            # not retrieve(query, agent_type)
             knowledge_context = ""
             if knowledge_retriever:
                 try:
-                    knowledge_context = knowledge_retriever.retrieve(
-                        session.query,
-                        agent_type=agent_key
+                    knowledge_context = knowledge_retriever.get_context_for_query(
+                        agent_type=agent_key,
+                        query=session.query
                     )
-                except:
+                except Exception as e:
+                    # Log the error for debugging (was silently failing before)
+                    print(f"Warning: Failed to retrieve knowledge context for {agent_key}: {e}")
                     pass
             
             try:
@@ -289,14 +299,19 @@ class CollaborationManager:
         agent_name = agent.agent_name if hasattr(agent, 'agent_name') else agent_key.upper()
         
         # Get knowledge context if available
+        # FIXED: Correct method name and parameter order
+        # The KnowledgeBase class has get_context_for_query(agent_type, query)
+        # not retrieve(query, agent_type)
         knowledge_context = ""
         if knowledge_retriever:
             try:
-                knowledge_context = knowledge_retriever.retrieve(
-                    session.query,
-                    agent_type=agent_key
+                knowledge_context = knowledge_retriever.get_context_for_query(
+                    agent_type=agent_key,
+                    query=session.query
                 )
-            except:
+            except Exception as e:
+                # Log the error for debugging (was silently failing before)
+                print(f"Warning: Failed to retrieve knowledge context for {agent_key}: {e}")
                 pass
         
         try:
