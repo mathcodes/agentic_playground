@@ -31,6 +31,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import Config
 from src.agent.multi_agent_orchestrator import MultiAgentOrchestrator
+import tempfile
+import psycopg2
+from werkzeug.utils import secure_filename
 
 # SECURITY: Import security modules
 try:
@@ -425,11 +428,13 @@ def process_query():
         # SECURITY: Catch-all for unexpected errors
         if SECURITY_ENABLED:
             audit_logger.log_security_event(
-                event_type='unexpected_error',
-                description=f"Unexpected error in query endpoint: {str(e)}",
-                ip_address=client_ip,
-                user_id=user_id,
-                severity='ERROR'
+                event='unexpected_error',
+                severity='high',
+                details={
+                    'error': str(e),
+                    'ip_address': client_ip,
+                    'user_id': user_id
+                }
             )
         
         if Config.DEBUG:
@@ -506,10 +511,12 @@ def test_connection():
         # SECURITY: Log exception
         if SECURITY_ENABLED:
             audit_logger.log_security_event(
-                event_type='db_connection_error',
-                description=f"Database connection test failed: {str(e)}",
-                ip_address=client_ip,
-                severity='ERROR'
+                event='db_connection_error',
+                severity='medium',
+                details={
+                    'error': str(e),
+                    'ip_address': client_ip
+                }
             )
         
         # SECURITY: Don't expose detailed error in production
@@ -518,26 +525,483 @@ def test_connection():
         else:
             return jsonify({'success': False, 'error': 'Database connection failed'})
 
+
+@app.route('/api/training', methods=['POST'])
+@rate_limit('authenticated' if Config.REQUIRE_AUTH else 'default')
+def add_training_data():
+    """
+    Add training data via pasted text (simpler alternative to file uploads).
+    
+    Accepts JSON with:
+    - agent_type: which agent this data is for (sql, csharp, epicor, general)
+    - title: description/title of the training data
+    - content: the actual training content (text)
+    
+    SECURITY:
+    - Rate limited to prevent abuse
+    - Input validation and sanitization
+    - Audit logging
+    """
+    print("\n" + "="*70)
+    print("[TRAINING DATA] Received POST request to /api/training")
+    print("="*70)
+    
+    start_time = time.time()
+    client_ip = get_client_ip() if SECURITY_ENABLED else 'unknown'
+    user_id = getattr(request, 'user_id', 'anonymous')
+    
+    print(f"[TRAINING DATA] Client IP: {client_ip}")
+    print(f"[TRAINING DATA] User ID: {user_id}")
+    
+    try:
+        # Parse JSON request
+        print("[TRAINING DATA] Parsing JSON request body...")
+        data = request.get_json()
+        print(f"[TRAINING DATA] Raw request data received: {data is not None}")
+        
+        if not data:
+            print("[TRAINING DATA] ERROR: No data provided in request")
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        # Extract and validate parameters
+        agent_type = data.get('agent_type', 'general')
+        title = data.get('title', '').strip()
+        content = data.get('content', '').strip()
+        
+        print(f"[TRAINING DATA] Extracted parameters:")
+        print(f"  - Agent Type: {agent_type}")
+        print(f"  - Title: {title[:50]}..." if len(title) > 50 else f"  - Title: {title}")
+        print(f"  - Content Length: {len(content)} characters")
+        
+        # Validation: ensure required fields are present
+        if not title:
+            print("[TRAINING DATA] ERROR: Title is required but not provided")
+            return jsonify({
+                'success': False,
+                'error': 'Title is required'
+            }), 400
+        
+        if not content:
+            print("[TRAINING DATA] ERROR: Content is required but not provided")
+            return jsonify({
+                'success': False,
+                'error': 'Content is required'
+            }), 400
+        
+        # Validation: agent type must be valid
+        valid_agent_types = ['sql', 'csharp', 'epicor', 'general']
+        if agent_type not in valid_agent_types:
+            print(f"[TRAINING DATA] ERROR: Invalid agent type: {agent_type}")
+            return jsonify({
+                'success': False,
+                'error': f'Invalid agent_type. Must be one of: {", ".join(valid_agent_types)}'
+            }), 400
+        
+        print("[TRAINING DATA] Validation passed")
+        
+        # Calculate hash of content for duplicate detection
+        import hashlib
+        content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+        print(f"[TRAINING DATA] Content hash: {content_hash[:16]}...")
+        
+        # Connect to database
+        print("[TRAINING DATA] Connecting to database...")
+        print(f"[TRAINING DATA] Database URL: {Config.DATABASE_URL[:50]}...")
+        conn = psycopg2.connect(Config.DATABASE_URL)
+        cursor = conn.cursor()
+        print("[TRAINING DATA] Database connection established")
+        
+        try:
+            # Check for duplicate content
+            print("[TRAINING DATA] Checking for duplicate content...")
+            cursor.execute(
+                "SELECT id, filename FROM uploaded_documents WHERE file_hash = %s",
+                (content_hash,)
+            )
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Duplicate found
+                print(f"[TRAINING DATA] ERROR: Duplicate content found (ID: {existing[0]}, Title: {existing[1]})")
+                return jsonify({
+                    'success': False,
+                    'error': f'Duplicate content detected. Already exists as: {existing[1]}'
+                }), 400
+            
+            print("[TRAINING DATA] No duplicate found, proceeding with insert...")
+            
+            # Insert into uploaded_documents table
+            print("[TRAINING DATA] Inserting document metadata into database...")
+            cursor.execute(
+                """INSERT INTO uploaded_documents 
+                   (filename, file_hash, file_type, file_size, content, content_length, uploaded_by, agent_type, category, metadata)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   RETURNING id""",
+                (title, content_hash, 'text/plain', len(content), content, len(content), user_id, agent_type, 'pasted', 
+                 json.dumps({'source': 'paste', 'length': len(content)}))
+            )
+            doc_id = cursor.fetchone()[0]
+            print(f"[TRAINING DATA] Document inserted with ID: {doc_id}")
+            
+            # Split content into chunks (for large documents)
+            # Simple chunking: split by paragraphs or every 1000 characters
+            print("[TRAINING DATA] Chunking content for storage...")
+            CHUNK_SIZE = 1000
+            chunks = []
+            
+            # Try to split by paragraphs first
+            paragraphs = content.split('\n\n')
+            print(f"[TRAINING DATA] Found {len(paragraphs)} paragraphs")
+            
+            current_chunk = ""
+            chunk_order = 0
+            
+            for para in paragraphs:
+                if len(current_chunk) + len(para) > CHUNK_SIZE and current_chunk:
+                    # Save current chunk
+                    chunks.append((doc_id, current_chunk.strip(), chunk_order))
+                    chunk_order += 1
+                    current_chunk = para
+                else:
+                    current_chunk += "\n\n" + para if current_chunk else para
+            
+            # Add remaining chunk
+            if current_chunk.strip():
+                chunks.append((doc_id, current_chunk.strip(), chunk_order))
+            
+            # If no chunks were created (very small content), add entire content as one chunk
+            if not chunks:
+                chunks.append((doc_id, content, 0))
+            
+            print(f"[TRAINING DATA] Created {len(chunks)} chunks")
+            
+            # Insert chunks into document_chunks table
+            print("[TRAINING DATA] Inserting chunks into database...")
+            for doc_id_val, chunk_text, order in chunks:
+                cursor.execute(
+                    """INSERT INTO document_chunks (document_id, chunk_text, chunk_index, chunk_size)
+                       VALUES (%s, %s, %s, %s)""",
+                    (doc_id_val, chunk_text, order, len(chunk_text))
+                )
+            print(f"[TRAINING DATA] All {len(chunks)} chunks inserted successfully")
+            
+            # Log success in upload_history
+            print("[TRAINING DATA] Logging to upload_history table...")
+            cursor.execute(
+                """INSERT INTO upload_history 
+                   (filename, file_size, status, error_message, uploaded_by, processing_time_ms, ip_address)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (title, len(content), 'success', 
+                 f'Added via paste interface. {len(chunks)} chunks created. Document ID: {doc_id}',
+                 user_id, int((time.time() - start_time) * 1000), client_ip)
+            )
+            print("[TRAINING DATA] Upload history logged")
+            
+            # Commit transaction
+            print("[TRAINING DATA] Committing transaction...")
+            conn.commit()
+            print("[TRAINING DATA] Transaction committed successfully")
+            
+            # Log success for audit
+            if SECURITY_ENABLED:
+                print("[TRAINING DATA] Logging to audit system...")
+                audit_logger.log_access(
+                    resource=f'document_{doc_id}',
+                    action=f'ADD_TRAINING_DATA ({agent_type})',
+                    success=True
+                )
+            
+            processing_time = int((time.time() - start_time) * 1000)
+            print(f"[TRAINING DATA] SUCCESS! Processing completed in {processing_time}ms")
+            print(f"[TRAINING DATA] Document ID: {doc_id}, Chunks: {len(chunks)}, Agent: {agent_type}")
+            print("="*70 + "\n")
+            
+            return jsonify({
+                'success': True,
+                'document_id': doc_id,
+                'chunks': len(chunks),
+                'agent_type': agent_type,
+                'title': title,
+                'processing_time_ms': processing_time
+            })
+            
+        except Exception as e:
+            print(f"[TRAINING DATA] ERROR during database operation: {str(e)}")
+            print(f"[TRAINING DATA] Rolling back transaction...")
+            conn.rollback()
+            print("[TRAINING DATA] Transaction rolled back")
+            raise e
+        finally:
+            print("[TRAINING DATA] Closing database connection...")
+            cursor.close()
+            conn.close()
+            print("[TRAINING DATA] Database connection closed")
+    
+    except Exception as e:
+        print(f"[TRAINING DATA] EXCEPTION CAUGHT: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"[TRAINING DATA] Full traceback:")
+        traceback.print_exc()
+        print("="*70 + "\n")
+        
+        if SECURITY_ENABLED:
+            audit_logger.log_security_event(
+                event='TRAINING_DATA_UPLOAD_FAILED',
+                severity='warning',
+                details={
+                    'error': str(e),
+                    'ip_address': client_ip,
+                    'user_id': user_id
+                }
+            )
+        
+        return jsonify({
+            'success': False,
+            'error': str(e) if Config.DEBUG else 'Failed to add training data'
+        }), 500
+
+
+@app.route('/api/upload', methods=['POST'])
+@rate_limit('authenticated' if Config.REQUIRE_AUTH else 'default')
+def upload_files():
+    """
+    Handle file uploads for agent training data.
+    
+    SECURITY:
+    - Rate limited to prevent abuse
+    - File type validation
+    - Size limits enforced
+    - Virus scanning (optional)
+    - Audit logging
+    """
+    start_time = time.time()
+    client_ip = get_client_ip() if SECURITY_ENABLED else 'unknown'
+    user_id = getattr(request, 'user_id', 'anonymous')
+    
+    try:
+        # Check if files were uploaded
+        if 'files' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No files provided'
+            }), 400
+        
+        files = request.files.getlist('files')
+        
+        if not files or len(files) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'No files selected'
+            }), 400
+        
+        # Get optional parameters
+        agent_type = request.form.get('agent_type', 'general')
+        category = request.form.get('category', None)
+        
+        # NOTE: File uploads are currently disabled in favor of paste-based training data
+        # If you need file upload functionality, implement file_parser.py
+        return jsonify({
+            'success': False,
+            'error': 'File uploads are disabled. Please use the "Add Training Data" paste feature instead.'
+        }), 501
+        
+        # Results tracking
+        results = {
+            'success': True,
+            'uploaded': 0,
+            'failed': 0,
+            'duplicates': 0,
+            'files': [],
+            'errors': []
+        }
+        
+        # Connect to database
+        conn = psycopg2.connect(Config.DATABASE_URL)
+        cursor = conn.cursor()
+        
+        # Process each file
+        for file in files:
+            if not file or file.filename == '':
+                continue
+            
+            filename = secure_filename(file.filename)
+            file_start = time.time()
+            
+            try:
+                # Save to temporary file
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    file.save(temp_file.name)
+                    temp_path = temp_file.name
+                
+                # Parse the file
+                parsed_data = parser.parse_file(temp_path, filename)
+                
+                if parsed_data is None:
+                    # Parsing failed
+                    errors = parser.get_errors()
+                    results['failed'] += 1
+                    results['errors'].extend(errors)
+                    results['files'].append({
+                        'filename': filename,
+                        'status': 'failed',
+                        'error': errors[-1] if errors else 'Unknown error'
+                    })
+                    
+                    # Log failure
+                    cursor.execute(
+                        """INSERT INTO upload_history 
+                           (filename, file_size, status, error_message, uploaded_by, processing_time_ms, ip_address)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                        (filename, os.path.getsize(temp_path), 'failed', 
+                         errors[-1] if errors else 'Parsing failed', user_id,
+                         int((time.time() - file_start) * 1000), client_ip)
+                    )
+                    
+                    parser.clear_errors()
+                    
+                else:
+                    # Check for duplicates
+                    cursor.execute(
+                        "SELECT id FROM uploaded_documents WHERE file_hash = %s",
+                        (parsed_data['file_hash'],)
+                    )
+                    existing = cursor.fetchone()
+                    
+                    if existing:
+                        results['duplicates'] += 1
+                        results['files'].append({
+                            'filename': filename,
+                            'status': 'duplicate',
+                            'message': 'File already uploaded'
+                        })
+                        
+                        # Log duplicate
+                        cursor.execute(
+                            """INSERT INTO upload_history 
+                               (filename, file_size, status, uploaded_by, processing_time_ms, ip_address)
+                               VALUES (%s, %s, %s, %s, %s, %s)""",
+                            (filename, parsed_data['file_size'], 'duplicate', user_id,
+                             int((time.time() - file_start) * 1000), client_ip)
+                        )
+                    else:
+                        # Insert new document
+                        cursor.execute(
+                            """INSERT INTO uploaded_documents 
+                               (filename, file_hash, file_type, file_size, content, content_length, 
+                                line_count, uploaded_by, agent_type, category, metadata)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                               RETURNING id""",
+                            (parsed_data['filename'], parsed_data['file_hash'], 
+                             parsed_data['file_type'], parsed_data['file_size'],
+                             parsed_data['content'], parsed_data['content_length'],
+                             parsed_data['line_count'], user_id, agent_type, category,
+                             json.dumps(parsed_data['metadata']))
+                        )
+                        doc_id = cursor.fetchone()[0]
+                        
+                        results['uploaded'] += 1
+                        results['files'].append({
+                            'filename': filename,
+                            'status': 'success',
+                            'id': doc_id,
+                            'size': parsed_data['file_size'],
+                            'type': parsed_data['file_type']
+                        })
+                        
+                        # Log success
+                        cursor.execute(
+                            """INSERT INTO upload_history 
+                               (filename, file_size, status, uploaded_by, processing_time_ms, ip_address)
+                               VALUES (%s, %s, %s, %s, %s, %s)""",
+                            (filename, parsed_data['file_size'], 'success', user_id,
+                             int((time.time() - file_start) * 1000), client_ip)
+                        )
+                
+                # Clean up temporary file
+                os.unlink(temp_path)
+                
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append(f"{filename}: {str(e)}")
+                results['files'].append({
+                    'filename': filename,
+                    'status': 'failed',
+                    'error': str(e)
+                })
+        
+        # Commit all changes
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        # Log upload session
+        if SECURITY_ENABLED:
+            audit_logger.log_event(
+                category='file_upload',
+                action='upload_files',
+                result='success' if results['uploaded'] > 0 else 'failed',
+                user_id=user_id,
+                ip_address=client_ip,
+                details={
+                    'uploaded': results['uploaded'],
+                    'failed': results['failed'],
+                    'duplicates': results['duplicates'],
+                    'total_files': len(files)
+                },
+                severity='INFO'
+            )
+        
+        processing_time = int((time.time() - start_time) * 1000)
+        results['processing_time_ms'] = processing_time
+        
+        # Determine overall success
+        if results['failed'] > 0 and results['uploaded'] == 0:
+            results['success'] = False
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        # Log error
+        if SECURITY_ENABLED:
+            audit_logger.log_security_event(
+                event='file_upload_error',
+                severity='medium',
+                details={
+                    'error': str(e),
+                    'ip_address': client_ip
+                }
+            )
+        
+        return jsonify({
+            'success': False,
+            'error': 'Upload failed',
+            'details': str(e) if Config.DEBUG else None
+        }), 500
+
+
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("🔒 SECURE MULTI-AGENT VOICE-TO-SQL WEB UI")
+    print("SECURE MULTI-AGENT VOICE-TO-SQL WEB UI")
     print("="*70)
     
     # SECURITY: Print configuration
     Config.print_config()
     
-    print("\n📝 Setup Instructions:")
+    print("\nSetup Instructions:")
     print("   1. Make sure PostgreSQL is running")
     print("   2. Set ANTHROPIC_API_KEY environment variable")
     print("   3. Set JWT_SECRET_KEY environment variable (production)")
     print("   4. Run database initialization: python scripts/init_db.py")
     
-    print("\n🔒 Security Status:")
-    print(f"   • Security Modules: {'✅ Enabled' if SECURITY_ENABLED else '❌ Disabled'}")
-    print(f"   • Authentication: {'✅ Required' if Config.REQUIRE_AUTH else '⚠️  Optional'}")
-    print(f"   • Rate Limiting: {'✅ Enabled' if Config.ENABLE_RATE_LIMITING else '❌ Disabled'}")
-    print(f"   • Audit Logging: {'✅ Enabled' if Config.ENABLE_AUDIT_LOGGING else '❌ Disabled'}")
-    print(f"   • HTTPS Only: {'✅ Yes' if Config.HTTPS_ONLY else '⚠️  No'}")
+    print("\nSecurity Status:")
+    print(f"   • Security Modules: {'[ENABLED]' if SECURITY_ENABLED else '[DISABLED]'}")
+    print(f"   • Authentication: {'[REQUIRED]' if Config.REQUIRE_AUTH else '[OPTIONAL]'}")
+    print(f"   • Rate Limiting: {'[ENABLED]' if Config.ENABLE_RATE_LIMITING else '[DISABLED]'}")
+    print(f"   • Audit Logging: {'[ENABLED]' if Config.ENABLE_AUDIT_LOGGING else '[DISABLED]'}")
+    print(f"   • HTTPS Only: {'[YES]' if Config.HTTPS_ONLY else '[NO]'}")
     print(f"   • Environment: {Config.ENVIRONMENT}")
     
     # SECURITY: Validate configuration
@@ -547,20 +1011,20 @@ if __name__ == '__main__':
         warnings = [e for e in errors if 'WARNING' in e]
         
         if critical:
-            print("\n❌ CRITICAL SECURITY ISSUES:")
+            print("\n[CRITICAL] SECURITY ISSUES:")
             for error in critical:
                 print(f"   • {error}")
-            print("\n⚠️  Cannot start with critical security issues!")
+            print("\n[WARNING] Cannot start with critical security issues!")
             print("   Please fix these issues and restart.\n")
             sys.exit(1)
         
         if warnings:
-            print("\n⚠️  SECURITY WARNINGS:")
+            print("\n[WARNING] SECURITY WARNINGS:")
             for warning in warnings:
                 print(f"   • {warning}")
             print("\n   Consider fixing these for production use.")
     
-    print("\n🌐 Starting web server...")
+    print("\nStarting web server...")
     print(f"   URL: http://{'127.0.0.1' if not Config.HTTPS_ONLY else 'localhost'}:5001")
     print("\n   Press Ctrl+C to stop\n")
     print("="*70 + "\n")

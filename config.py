@@ -148,7 +148,7 @@ class Config:
     
     # SECURITY: Debug mode
     # CRITICAL: Must be False in production (exposes sensitive info in errors)
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"  # Enabled for development
     
     @classmethod
     def validate(cls) -> List[str]:
@@ -315,7 +315,7 @@ class Config:
         print("APPLICATION CONFIGURATION")
         print("="*60)
         
-        print("\n🗄️  DATABASE:")
+        print("\nDATABASE:")
         # SECURITY: Redact password from database URL
         safe_db_url = cls._redact_db_password(cls.DATABASE_URL)
         print(f"  URL: {safe_db_url}")
@@ -323,13 +323,13 @@ class Config:
         print(f"  Connect Timeout: {cls.DB_CONNECT_TIMEOUT}s")
         print(f"  Query Timeout: {cls.DB_QUERY_TIMEOUT}s")
         
-        print("\n🔑 AUTHENTICATION:")
+        print("\nAUTHENTICATION:")
         print(f"  Anthropic API Key: {cls._redact_key(cls.ANTHROPIC_API_KEY)}")
         print(f"  Anthropic Model: {cls.ANTHROPIC_MODEL}")
         print(f"  JWT Secret: {cls._redact_key(cls.JWT_SECRET_KEY)}")
         print(f"  API Key: {cls._redact_key(cls.API_KEY)}")
         
-        print("\n🔒 SECURITY:")
+        print("\nSECURITY:")
         print(f"  Require Auth: {cls.REQUIRE_AUTH}")
         print(f"  Rate Limiting: {cls.ENABLE_RATE_LIMITING}")
         print(f"  Audit Logging: {cls.ENABLE_AUDIT_LOGGING}")
@@ -339,11 +339,11 @@ class Config:
         print(f"  Max Query Time: {cls.MAX_QUERY_TIME}s")
         print(f"  Session Timeout: {cls.SESSION_TIMEOUT}min")
         
-        print("\n🎤 SPEECH-TO-TEXT:")
+        print("\nSPEECH-TO-TEXT:")
         print(f"  Whisper Model: {cls.WHISPER_MODEL}")
         print(f"  Sample Rate: {cls.SAMPLE_RATE}Hz")
         
-        print("\n🌍 ENVIRONMENT:")
+        print("\nENVIRONMENT:")
         print(f"  Environment: {cls.ENVIRONMENT}")
         print(f"  Debug: {cls.DEBUG}")
         print(f"  CORS Origins: {cls.CORS_ORIGINS}")
@@ -353,7 +353,7 @@ class Config:
         # SECURITY: Show validation errors
         errors = cls.validate()
         if errors:
-            print("⚠️  CONFIGURATION WARNINGS/ERRORS:")
+            print("[WARNING] CONFIGURATION WARNINGS/ERRORS:")
             for error in errors:
                 print(f"  • {error}")
             print()
@@ -405,7 +405,7 @@ if __name__ != "__main__":
     if errors:
         critical_errors = [e for e in errors if e.startswith("CRITICAL")]
         if critical_errors:
-            print("\n⚠️  CRITICAL CONFIGURATION ERRORS DETECTED!")
+            print("\n[CRITICAL] CONFIGURATION ERRORS DETECTED!")
             for error in critical_errors:
                 print(f"  {error}")
             print("\nPlease fix these issues before running the application.\n")

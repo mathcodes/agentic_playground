@@ -13,88 +13,103 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f14 0%, #1a1a24 50%, #0f0f14 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #e4e4e7;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
         .header {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
+            background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
+            padding: 32px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .header h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            background: linear-gradient(135deg, #a1a1aa 0%, #fafafa 50%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
 
         .header p {
-            color: #666;
-            font-size: 1.1em;
+            color: #a1a1aa;
+            font-size: 0.95em;
+            font-weight: 400;
         }
 
         .agent-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
             font-weight: 600;
-            margin: 0 4px;
+            margin: 0 3px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 0.05em;
         }
 
         .agent-sql {
-            background: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, #3f3f46 0%, #52525b 100%);
+            color: #d4d4d8;
         }
 
         .agent-csharp {
-            background: #8b5cf6;
-            color: white;
+            background: linear-gradient(135deg, #3f3f46 0%, #52525b 100%);
+            color: #d4d4d8;
         }
 
         .agent-epicor {
-            background: #10b981;
-            color: white;
+            background: linear-gradient(135deg, #3f3f46 0%, #52525b 100%);
+            color: #d4d4d8;
         }
 
         .collaboration-mode {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
             font-weight: 600;
-            background: #f59e0b;
-            color: white;
-            margin-left: 8px;
+            background: linear-gradient(135deg, #3f3f46 0%, #52525b 100%);
+            color: #d4d4d8;
+            margin-left: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .status-indicator {
             display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.85em;
             font-weight: 600;
-            margin-top: 15px;
+            margin-top: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 0.03em;
         }
 
         .status-ready {
-            background: #10b981;
-            color: white;
+            background: linear-gradient(135deg, #27272a 0%, #3f3f46 100%);
+            color: #10b981;
+            border-color: #10b981;
         }
 
         .status-error {
-            background: #ef4444;
-            color: white;
+            background: linear-gradient(135deg, #27272a 0%, #3f3f46 100%);
+            color: #ef4444;
+            border-color: #ef4444;
         }
 
         .main-content {
@@ -105,41 +120,46 @@
 
         .query-panel,
         .log-panel {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .panel-title {
-            font-size: 1.5em;
-            color: #333;
+            font-size: 1.3em;
+            color: #fafafa;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
 
         .panel-title::before {
             content: '';
-            width: 4px;
-            height: 24px;
-            background: #667eea;
-            margin-right: 10px;
+            width: 3px;
+            height: 20px;
+            background: linear-gradient(180deg, #71717a 0%, #52525b 100%);
+            margin-right: 12px;
             border-radius: 2px;
         }
 
         .instructions {
-            background: #f0f9ff;
-            border-left: 4px solid #3b82f6;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
+            background: rgba(39, 39, 42, 0.5);
+            border-left: 2px solid #52525b;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            border-radius: 4px;
         }
 
         .instructions h3 {
-            color: #1e40af;
+            color: #d4d4d8;
             margin-bottom: 10px;
-            font-size: 1em;
+            font-size: 0.9em;
+            font-weight: 600;
+            letter-spacing: 0.02em;
         }
 
         .instructions ul {
@@ -148,105 +168,136 @@
         }
 
         .instructions li {
-            color: #1e3a8a;
-            margin: 8px 0;
-            padding-left: 20px;
+            color: #a1a1aa;
+            margin: 6px 0;
+            padding-left: 18px;
             position: relative;
+            font-size: 0.9em;
         }
 
         .instructions li::before {
-            content: '→';
+            content: '▸';
             position: absolute;
             left: 0;
-            color: #3b82f6;
+            color: #71717a;
         }
 
         .example-queries {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .example-queries h4 {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 10px;
+            color: #a1a1aa;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .example-tag {
             display: inline-block;
-            background: #f3f4f6;
-            color: #4b5563;
+            background: rgba(63, 63, 70, 0.5);
+            color: #d4d4d8;
             padding: 6px 12px;
-            margin: 4px;
-            border-radius: 15px;
-            font-size: 0.85em;
+            margin: 3px;
+            border-radius: 4px;
+            font-size: 0.8em;
             cursor: pointer;
             transition: all 0.2s;
+            border: 1px solid rgba(82, 82, 91, 0.5);
         }
 
         .example-tag:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-2px);
+            background: rgba(82, 82, 91, 0.8);
+            border-color: #71717a;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .query-input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1em;
-            margin-bottom: 15px;
-            transition: border 0.3s;
+            padding: 14px 16px;
+            border: 1px solid #3f3f46;
+            background: rgba(24, 24, 27, 0.5);
+            border-radius: 6px;
+            font-size: 0.95em;
+            margin-bottom: 14px;
+            transition: all 0.2s;
+            color: #fafafa;
+            font-family: inherit;
         }
 
         .query-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #71717a;
+            background: rgba(24, 24, 27, 0.8);
+            box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.1);
+        }
+
+        .query-input::placeholder {
+            color: #71717a;
         }
 
         .button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 1em;
+            background: linear-gradient(135deg, #27272a 0%, #3f3f46 100%);
+            color: #fafafa;
+            border: 1px solid #52525b;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-size: 0.95em;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
             width: 100%;
+            letter-spacing: 0.02em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .button:hover {
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, #3f3f46 0%, #52525b 100%);
+            border-color: #71717a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .button:disabled {
-            background: #9ca3af;
+            background: #27272a;
+            border-color: #3f3f46;
+            color: #71717a;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .button-secondary {
-            background: #6b7280;
+            background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
             margin-top: 10px;
+            border-color: #3f3f46;
+        }
+
+        .button-secondary:hover {
+            background: linear-gradient(135deg, #27272a 0%, #3f3f46 100%);
+            border-color: #52525b;
         }
 
         .log-container {
-            background: #1e293b;
-            border-radius: 10px;
-            padding: 15px;
+            background: rgba(10, 10, 13, 0.8);
+            border: 1px solid #27272a;
+            border-radius: 6px;
+            padding: 16px;
             max-height: 500px;
             overflow-y: auto;
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 0.9em;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.85em;
         }
 
         .log-entry {
-            margin: 8px 0;
+            margin: 6px 0;
             padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 4px;
             animation: slideIn 0.3s ease;
+            border-left: 2px solid transparent;
         }
 
         @keyframes slideIn {
@@ -262,42 +313,43 @@
         }
 
         .log-info {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 3px solid #3b82f6;
-            color: #93c5fd;
+            background: rgba(63, 63, 70, 0.3);
+            border-left-color: #71717a;
+            color: #d4d4d8;
         }
 
         .log-working {
-            background: rgba(251, 191, 36, 0.1);
-            border-left: 3px solid #fbbf24;
-            color: #fcd34d;
+            background: rgba(82, 82, 91, 0.3);
+            border-left-color: #a1a1aa;
+            color: #fafafa;
         }
 
         .log-success {
             background: rgba(16, 185, 129, 0.1);
-            border-left: 3px solid #10b981;
+            border-left-color: #10b981;
             color: #6ee7b7;
         }
 
         .log-error {
             background: rgba(239, 68, 68, 0.1);
-            border-left: 3px solid #ef4444;
+            border-left-color: #ef4444;
             color: #fca5a5;
         }
 
         .log-time {
-            color: #64748b;
-            font-size: 0.85em;
+            color: #71717a;
+            font-size: 0.8em;
             margin-right: 10px;
         }
 
         .results-panel {
             grid-column: 1 / -1;
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
+            background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
+            padding: 24px;
             margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             display: none;
         }
 
@@ -306,22 +358,27 @@
         }
 
         .sql-display {
-            background: #1e293b;
-            color: #94a3b8;
-            padding: 20px;
-            border-radius: 10px;
+            background: rgba(10, 10, 13, 0.8);
+            border: 1px solid #27272a;
+            color: #d4d4d8;
+            padding: 16px;
+            border-radius: 6px;
             margin: 15px 0;
-            font-family: 'Monaco', 'Courier New', monospace;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
             overflow-x: auto;
+            font-size: 0.9em;
         }
 
         .results-table {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 10px;
+            background: rgba(24, 24, 27, 0.5);
+            border: 1px solid #3f3f46;
+            padding: 16px;
+            border-radius: 6px;
             margin-top: 15px;
             white-space: pre-wrap;
-            font-family: monospace;
+            font-family: 'Monaco', 'Menlo', monospace;
+            color: #e4e4e7;
+            font-size: 0.85em;
         }
 
         .spinner {
@@ -341,6 +398,27 @@
             }
         }
 
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(24, 24, 27, 0.5);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3f3f46 0%, #52525b 100%);
+            border-radius: 5px;
+            border: 2px solid rgba(24, 24, 27, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #52525b 0%, #71717a 100%);
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -352,11 +430,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Multi-Agent AI Platform</h1>
-            <p>Ask questions about SQL, C#, Epicor P21, or anything else - AI agents collaborate to help you</p>
-            <div id="status-indicator" class="status-indicator status-error">
-                Checking system status...
-            </div>
+            <h1>Multi-Agent AI Platform</h1>
+            <parameter name="p">Ask questions about SQL, C#, Epicor P21, or anything else - AI agents collaborate to
+                help you</p>
+                <div id="status-indicator" class="status-indicator status-error">
+                    Checking system status...
+                </div>
         </div>
 
         <div class="main-content">
@@ -364,7 +443,7 @@
                 <div class="panel-title">Query Input</div>
 
                 <div class="instructions">
-                    <h3>📝 How to Use:</h3>
+                    <h3>How to Use:</h3>
                     <ul>
                         <li>Ask any question - SQL, C#, P21, or general topics</li>
                         <li>AI agents <span class="agent-sql">SQL</span> <span class="agent-csharp">C#</span> <span
@@ -376,7 +455,7 @@
                 </div>
 
                 <div class="example-queries">
-                    <h4>💬 General AI Chat:</h4>
+                    <h4>General AI Chat:</h4>
                     <span class="example-tag" onclick="setQuery(this)">What is the difference between AI and ML?</span>
                     <span class="example-tag" onclick="setQuery(this)">Explain REST APIs in simple terms</span>
                     <span class="example-tag" onclick="setQuery(this)">How can I improve team productivity?</span>
@@ -384,28 +463,28 @@
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>🗄️ SQL Database:</h4>
+                    <h4>SQL Database:</h4>
                     <span class="example-tag" onclick="setQuery(this)">How many products do we have?</span>
                     <span class="example-tag" onclick="setQuery(this)">Show me all orders from last month</span>
                     <span class="example-tag" onclick="setQuery(this)">What are the top 5 customers by sales?</span>
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>💻 C#/.NET Code:</h4>
+                    <h4>C#/.NET Code:</h4>
                     <span class="example-tag" onclick="setQuery(this)">Write async LINQ query</span>
                     <span class="example-tag" onclick="setQuery(this)">Create Entity Framework migration</span>
                     <span class="example-tag" onclick="setQuery(this)">Explain dependency injection in .NET</span>
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>📦 Epicor P21:</h4>
+                    <h4>Epicor P21:</h4>
                     <span class="example-tag" onclick="setQuery(this)">How do I export P21 sales data?</span>
                     <span class="example-tag" onclick="setQuery(this)">P21 API authentication example</span>
                     <span class="example-tag" onclick="setQuery(this)">Query P21 customer table structure</span>
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>🤝 Multi-Agent Tasks:</h4>
+                    <h4>Multi-Agent Tasks:</h4>
                     <span class="example-tag" onclick="setQuery(this)">Build P21 integration API with C# and SQL</span>
                     <span class="example-tag" onclick="setQuery(this)">Create data export pipeline for P21</span>
                     <span class="example-tag" onclick="setQuery(this)">Design database schema with C# models</span>
@@ -415,12 +494,61 @@
                     placeholder="Ask anything - SQL, C#, P21, or general questions..."></textarea>
 
                 <button id="submit-btn" class="button" onclick="submitQuery()">
-                    🤖 Ask AI Agents
+                    Ask AI Agents
                 </button>
 
                 <button class="button button-secondary" onclick="testConnection()">
-                    🔌 Test Database Connection
+                    Test Database Connection
                 </button>
+
+                <button class="button button-secondary" onclick="showPasteModal()">
+                    Add Training Data
+                </button>
+            </div>
+
+            <!-- Training Data Paste Modal -->
+            <div id="paste-modal"
+                style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow: auto;">
+                <div
+                    style="background: linear-gradient(135deg, #18181b 0%, #27272a 100%); border: 1px solid #3f3f46; border-radius: 8px; max-width: 800px; margin: 50px auto; padding: 30px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);">
+                    <h2 style="color: #fafafa; margin-bottom: 20px;">Add Training Data</h2>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="color: #d4d4d8; display: block; margin-bottom: 8px;">Agent Type:</label>
+                        <select id="paste-agent-type"
+                            style="width: 100%; padding: 12px; background: rgba(24, 24, 27, 0.5); border: 1px solid #3f3f46; border-radius: 6px; color: #fafafa; font-size: 0.95em;">
+                            <option value="general">General Chat</option>
+                            <option value="sql">SQL Agent</option>
+                            <option value="csharp">C# Agent</option>
+                            <option value="epicor">Epicor P21 Agent</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="color: #d4d4d8; display: block; margin-bottom: 8px;">Title/Description:</label>
+                        <input type="text" id="paste-title" placeholder="e.g., SQL Best Practices"
+                            style="width: 100%; padding: 12px; background: rgba(24, 24, 27, 0.5); border: 1px solid #3f3f46; border-radius: 6px; color: #fafafa; font-size: 0.95em;">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="color: #d4d4d8; display: block; margin-bottom: 8px;">Paste Your Training
+                            Data:</label>
+                        <textarea id="paste-content"
+                            placeholder="Paste your documentation, code examples, or training data here..."
+                            style="width: 100%; min-height: 300px; padding: 12px; background: rgba(10, 10, 13, 0.8); border: 1px solid #3f3f46; border-radius: 6px; color: #fafafa; font-size: 0.9em; font-family: 'Monaco', 'Menlo', monospace; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="submitPastedData()"
+                            style="flex: 1; padding: 12px; background: linear-gradient(135deg, #27272a 0%, #3f3f46 100%); color: #fafafa; border: 1px solid #52525b; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            Save Training Data
+                        </button>
+                        <button onclick="closePasteModal()"
+                            style="flex: 1; padding: 12px; background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="log-panel">
@@ -456,10 +584,10 @@
                     const indicator = document.getElementById('status-indicator');
                     if (data.ready) {
                         indicator.className = 'status-indicator status-ready';
-                        indicator.textContent = '✅ System Ready';
+                        indicator.textContent = '[READY] System Ready';
                     } else {
                         indicator.className = 'status-indicator status-error';
-                        indicator.textContent = '⚠️ ' + (data.errors[0] || 'Configuration incomplete');
+                        indicator.textContent = '[ERROR] ' + (data.errors[0] || 'Configuration incomplete');
                     }
                 })
                 .catch(err => {
@@ -530,7 +658,7 @@
                 .then(r => r.json())
                 .then(data => {
                     btn.disabled = false;
-                    btn.innerHTML = '🤖 Ask AI Agents';
+                    btn.innerHTML = 'Ask AI Agents';
 
                     if (data.success) {
                         showResults(data);
@@ -540,7 +668,7 @@
                 })
                 .catch(err => {
                     btn.disabled = false;
-                    btn.innerHTML = '🤖 Ask AI Agents';
+                    btn.innerHTML = 'Ask AI Agents';
                     showError('Request failed: ' + err.message);
                 });
         }
@@ -564,7 +692,7 @@
             }
 
             let html = `
-                <h3>📝 Your Question</h3>
+                <h3>Your Question</h3>
                 <p style="color: #666; margin: 10px 0 20px 0;">${escapeHtml(data.query)}</p>
                 
                 <div style="margin-bottom: 20px;">
@@ -575,7 +703,7 @@
 
             // Show multi-agent collaboration
             if (data.collaboration_session && data.collaboration_session.messages) {
-                html += `<h3>🤝 Agent Collaboration</h3>`;
+                html += `<h3>Agent Collaboration</h3>`;
 
                 data.collaboration_session.messages.forEach((msg, idx) => {
                     const agentClass = msg.agent.toLowerCase().includes('sql') ? 'sql' :
@@ -594,7 +722,7 @@
             } else if (data.final_response) {
                 // Single agent or simple response
                 html += `
-                    <h3>💡 Response</h3>
+                    <h3>Response</h3>
                     <div class="results-table" style="white-space: pre-wrap;">${escapeHtml(data.final_response)}</div>
                 `;
             }
@@ -602,7 +730,7 @@
             // Show SQL if available
             if (data.sql) {
                 html += `
-                    <h3>🔍 Generated SQL</h3>
+                    <h3>Generated SQL</h3>
                     <div class="sql-display">${escapeHtml(data.sql)}</div>
                 `;
             }
@@ -610,7 +738,7 @@
             // Show SQL results if available
             if (data.sql_results) {
                 html += `
-                    <h3>📊 Query Results</h3>
+                    <h3>Query Results</h3>
                     <div class="results-table">${escapeHtml(data.sql_results)}</div>
                 `;
             }
@@ -643,12 +771,130 @@
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Database connection successful!');
+                        alert('[SUCCESS] Database connection successful!');
                     } else {
-                        alert('❌ Connection failed: ' + data.error);
+                        alert('[ERROR] Connection failed: ' + data.error);
                     }
                 });
         }
+
+        // Show the paste modal for adding training data
+        function showPasteModal() {
+            console.log('[UI] Opening training data paste modal');
+            document.getElementById('paste-modal').style.display = 'block';
+            document.getElementById('paste-content').focus();
+        }
+
+        // Close the paste modal
+        function closePasteModal() {
+            console.log('[UI] Closing training data paste modal');
+            document.getElementById('paste-modal').style.display = 'none';
+            document.getElementById('paste-title').value = '';
+            document.getElementById('paste-content').value = '';
+        }
+
+        // Submit pasted training data to backend
+        function submitPastedData() {
+            console.log('='.repeat(70));
+            console.log('[TRAINING DATA] submitPastedData() called');
+            console.log('='.repeat(70));
+
+            const agentType = document.getElementById('paste-agent-type').value;
+            const title = document.getElementById('paste-title').value.trim();
+            const content = document.getElementById('paste-content').value.trim();
+
+            console.log('[TRAINING DATA] Extracted form data:');
+            console.log('  - Agent Type:', agentType);
+            console.log('  - Title:', title);
+            console.log('  - Content Length:', content.length, 'characters');
+
+            // Validation: ensure content is provided
+            if (!content) {
+                console.error('[TRAINING DATA] Validation failed: No content provided');
+                alert('[ERROR] Please paste some content before submitting.');
+                return;
+            }
+
+            // Validation: ensure title is provided
+            if (!title) {
+                console.error('[TRAINING DATA] Validation failed: No title provided');
+                alert('[ERROR] Please provide a title/description for this training data.');
+                return;
+            }
+
+            console.log('[TRAINING DATA] Validation passed');
+
+            // Show progress in log
+            addLog('training', `Adding training data: "${title}" for ${agentType} agent...`, 'info');
+
+            // Prepare request payload
+            const payload = {
+                agent_type: agentType,
+                title: title,
+                content: content
+            };
+
+            console.log('[TRAINING DATA] Preparing POST request to /api/training');
+            console.log('[TRAINING DATA] Payload:', {
+                agent_type: payload.agent_type,
+                title: payload.title,
+                content_length: payload.content.length
+            });
+
+            // Send data to backend API
+            console.log('[TRAINING DATA] Sending fetch request...');
+            fetch('/api/training', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    console.log('[TRAINING DATA] Received response:', response.status, response.statusText);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('[TRAINING DATA] Parsed JSON response:', data);
+
+                    if (data.success) {
+                        console.log('[TRAINING DATA] SUCCESS!');
+                        console.log('  - Document ID:', data.document_id);
+                        console.log('  - Chunks:', data.chunks);
+                        console.log('  - Processing Time:', data.processing_time_ms, 'ms');
+
+                        addLog('training', `[SUCCESS] Training data saved (${data.chunks} chunks)`, 'success');
+                        addLog('training', `Document ID: ${data.document_id}`, 'info');
+
+                        closePasteModal();
+                        alert(`[SUCCESS] Training data saved!\n\nDocument ID: ${data.document_id}\nChunks created: ${data.chunks}\nAgent: ${agentType}`);
+                    } else {
+                        console.error('[TRAINING DATA] Request succeeded but operation failed:', data.error);
+                        addLog('training', `[ERROR] ${data.error || 'Failed to save training data'}`, 'error');
+                        alert(`[ERROR] ${data.error || 'Failed to save training data'}`);
+                    }
+                })
+                .catch(err => {
+                    console.error('[TRAINING DATA] Request failed with exception:', err);
+                    console.error('[TRAINING DATA] Error details:', err.message);
+                    console.error('[TRAINING DATA] Stack trace:', err.stack);
+
+                    addLog('training', `[ERROR] ${err.message}`, 'error');
+                    alert(`[ERROR] Request failed: ${err.message}`);
+                })
+                .finally(() => {
+                    console.log('[TRAINING DATA] Request completed');
+                    console.log('='.repeat(70));
+                });
+        }
+
+        // Close modal when clicking outside the content area
+        document.addEventListener('click', function (event) {
+            const modal = document.getElementById('paste-modal');
+            if (event.target === modal) {
+                closePasteModal();
+            }
+        });
 
         function escapeHtml(text) {
             const div = document.createElement('div');

@@ -45,3 +45,4 @@ tmp/
 
 # Model cache (Whisper downloads models)
 ~/.cache/whisper/
+.env.bak
