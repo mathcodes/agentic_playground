@@ -18,6 +18,7 @@ from src.agent.router import RouterAgent
 from src.agent.orchestrator import VoiceToSQLAgent
 from src.agent.csharp_agent import CSharpAgent
 from src.agent.epicor_agent import EpicorP21Agent
+from src.agent.general_agent import GeneralAgent  # ENHANCEMENT: Added general chat agent
 from src.agent.collaboration import CollaborationManager, CollaborationSession
 from src.knowledge.retriever import KnowledgeRetriever
 
@@ -27,6 +28,7 @@ class AgentType(Enum):
     SQL = "sql"
     CSHARP = "csharp"
     EPICOR = "epicor"
+    GENERAL = "general"  # ENHANCEMENT: Added general chat agent type
 
 
 @dataclass
@@ -99,10 +101,12 @@ class MultiAgentOrchestrator:
         self.router = RouterAgent(api_key=config.ANTHROPIC_API_KEY)
         
         # Initialize specialized agents
+        # ENHANCEMENT: Added general agent for conversational queries
         self.agents = {
             "sql": VoiceToSQLAgent(on_status=on_status, verbose=verbose),
             "csharp": CSharpAgent(api_key=config.ANTHROPIC_API_KEY),
-            "epicor": EpicorP21Agent(api_key=config.ANTHROPIC_API_KEY)
+            "epicor": EpicorP21Agent(api_key=config.ANTHROPIC_API_KEY),
+            "general": GeneralAgent(api_key=config.ANTHROPIC_API_KEY)
         }
         
         # Initialize collaboration manager
@@ -202,10 +206,12 @@ class MultiAgentOrchestrator:
         agents_used = [session.primary_agent] + session.supporting_agents
         
         # Extract specific responses
+        # ENHANCEMENT: Added general response extraction
         sql_response = None
         sql_results = None
         csharp_response = None
         epicor_response = None
+        general_response = None
         
         for msg in session.messages:
             if "SQL" in msg.agent_name.upper():
@@ -217,8 +223,11 @@ class MultiAgentOrchestrator:
                 csharp_response = msg.content
             elif "EPICOR" in msg.agent_name.upper() or "P21" in msg.agent_name.upper():
                 epicor_response = msg.content
+            elif "GENERAL" in msg.agent_name.upper():
+                general_response = msg.content
         
-        return MultiAgentResult(
+        # Build result with all agent responses
+        result = MultiAgentResult(
             success=session.status == "completed",
             mode=session.mode,
             agents_used=agents_used,
@@ -230,6 +239,12 @@ class MultiAgentOrchestrator:
             csharp_response=csharp_response,
             epicor_response=epicor_response
         )
+        
+        # Add general response if available (as a dynamic attribute)
+        if general_response:
+            result.general_response = general_response
+        
+        return result
     
     def process_text(self, text: str) -> MultiAgentResult:
         """Process text input (alias for process_query)"""
@@ -253,12 +268,15 @@ if __name__ == "__main__":
     
     orchestrator = create_orchestrator(verbose=True)
     
+    # ENHANCEMENT: Added diverse test queries including general queries
     test_queries = [
         "Show me all products",
         "How do I use LINQ in C#?",
         "How do I export P21 sales data?",
         "Write C# code to query P21 database for top customers",
-        "Build a P21 integration API with async database operations"
+        "Build a P21 integration API with async database operations",
+        "What is the difference between AI and machine learning?",
+        "Explain best practices for code reviews"
     ]
     
     for i, query in enumerate(test_queries, 1):

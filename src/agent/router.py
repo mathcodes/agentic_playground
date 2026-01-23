@@ -25,21 +25,27 @@ class RouterAgent:
         self.model = "claude-sonnet-4-20250514"
         
         # Available agents
+        # ENHANCEMENT: Added general agent for conversational queries that don't require specialized expertise
         self.available_agents = {
             "sql": {
                 "name": "SQL Agent",
-                "expertise": ["database queries", "SQL", "data retrieval", "schema", "postgresql", "database design"],
+                "expertise": ["database queries", "SQL", "data retrieval", "schema", "postgresql", "database design", "select", "join", "where"],
                 "description": "Converts natural language to SQL queries and executes them"
             },
             "csharp": {
                 "name": "C# Agent",
-                "expertise": ["c#", "csharp", ".net", "programming", "linq", "async", "await", "code examples"],
+                "expertise": ["c#", "csharp", ".net", "programming", "linq", "async", "await", "code examples", "entity framework", "asp.net"],
                 "description": "Provides C# and .NET programming help, code generation, and explanations"
             },
             "epicor": {
                 "name": "Epicor P21 Agent",
                 "expertise": ["epicor", "p21", "erp", "export", "import", "p21 api", "p21 database", "erp integration"],
                 "description": "Specializes in Epicor P21 ERP system, exports, database, and API integration"
+            },
+            "general": {
+                "name": "General AI Chat Agent",
+                "expertise": ["general", "explain", "what is", "how do", "help", "question", "discussion", "brainstorm", "advice"],
+                "description": "Handles general conversational queries, explanations, and questions that don't require specialized technical expertise"
             }
         }
     
@@ -78,12 +84,12 @@ class RouterAgent:
             return routing
             
         except Exception as e:
-            # Default to SQL agent on error
+            # ENHANCEMENT: Default to general agent on error (more appropriate for unknown queries)
             return {
-                "primary_agent": "sql",
+                "primary_agent": "general",
                 "supporting_agents": [],
                 "collaboration_mode": "single",
-                "reasoning": f"Error in routing, defaulting to SQL agent: {str(e)}",
+                "reasoning": f"Error in routing, defaulting to general agent: {str(e)}",
                 "confidence": "low"
             }
     
@@ -141,6 +147,15 @@ CONFIDENCE: high
 REASONING: Simple database query, SQL agent can handle alone
 ```
 
+Query: "What is the difference between AI and ML?"
+```
+PRIMARY: general
+SUPPORTING: none
+MODE: single
+CONFIDENCE: high
+REASONING: General knowledge question, no specialized technical expertise needed
+```
+
 Query: "How do I export P21 sales data using C#?"
 ```
 PRIMARY: epicor
@@ -168,7 +183,16 @@ CONFIDENCE: medium
 REASONING: Complex integration requiring P21, API code, and database knowledge
 ```
 
-Remember: More agents = better coverage but slower response. Only use collaboration when truly beneficial."""
+Query: "Explain best practices for team productivity"
+```
+PRIMARY: general
+SUPPORTING: none
+MODE: single
+CONFIDENCE: high
+REASONING: General business question, no technical specialization required
+```
+
+Remember: More agents = better coverage but slower response. Only use collaboration when truly beneficial. Use the general agent for conversational queries, explanations, and general advice."""
     
     def _parse_routing_response(self, response_text: str, query: str) -> Dict[str, Any]:
         """Parse Claude's routing decision"""
@@ -212,13 +236,18 @@ Remember: More agents = better coverage but slower response. Only use collaborat
                 result["reasoning"] = line.split(":", 1)[1].strip()
         
         # Fallback: Use keyword matching if parsing failed
-        if result["primary_agent"] == "sql" and result["confidence"] == "medium":
+        # ENHANCEMENT: Changed default from SQL to general for better routing
+        if result["primary_agent"] in ["sql", "general"] and result["confidence"] == "medium":
             result = self._fallback_routing(query)
         
         return result
     
     def _fallback_routing(self, query: str) -> Dict[str, Any]:
-        """Fallback routing using keyword matching"""
+        """
+        Fallback routing using keyword matching.
+        
+        ENHANCEMENT: Improved to default to general agent if no clear match found.
+        """
         query_lower = query.lower()
         
         # Count matches for each agent
@@ -230,7 +259,14 @@ Remember: More agents = better coverage but slower response. Only use collaborat
                     scores[agent_key] += 1
         
         # Determine primary agent (highest score)
-        primary = max(scores.items(), key=lambda x: x[1])[0]
+        # ENHANCEMENT: If no clear winner (all scores are 0 or tied), default to general
+        max_score = max(scores.values())
+        
+        if max_score == 0:
+            # No keyword matches, use general agent
+            primary = "general"
+        else:
+            primary = max(scores.items(), key=lambda x: x[1])[0]
         
         # Determine supporting agents (score > 0 and not primary)
         supporting = [agent for agent, score in scores.items() 
@@ -248,7 +284,7 @@ Remember: More agents = better coverage but slower response. Only use collaborat
             "primary_agent": primary,
             "supporting_agents": supporting,
             "collaboration_mode": mode,
-            "reasoning": f"Keyword matching: {primary} has {scores[primary]} matches",
+            "reasoning": f"Keyword matching: {primary} has {scores[primary]} matches" + (" (defaulted to general)" if max_score == 0 else ""),
             "confidence": "low"
         }
 

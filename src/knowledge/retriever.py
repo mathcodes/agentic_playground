@@ -245,3 +245,8 @@ if __name__ == "__main__":
     results = kb.search_docs('csharp', 'LINQ query', max_results=3)
     for result in results:
         print(f"  - {result['title']} (score: {result.get('relevance_score', 0)})")
+
+
+# Alias for backward compatibility
+# The class was originally designed as KnowledgeBase but other code expects KnowledgeRetriever
+KnowledgeRetriever = KnowledgeBase

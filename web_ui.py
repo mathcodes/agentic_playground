@@ -561,16 +561,17 @@ if __name__ == '__main__':
             print("\n   Consider fixing these for production use.")
     
     print("\n🌐 Starting web server...")
-    print(f"   URL: http://{'127.0.0.1' if not Config.HTTPS_ONLY else 'localhost'}:5000")
+    print(f"   URL: http://{'127.0.0.1' if not Config.HTTPS_ONLY else 'localhost'}:5001")
     print("\n   Press Ctrl+C to stop\n")
     print("="*70 + "\n")
     
     # SECURITY: Run with appropriate settings
+    # NOTE: Changed from port 5000 to 5001 to avoid macOS AirPlay Receiver conflict
     app.run(
         debug=Config.DEBUG,
         host='127.0.0.1',
-        port=5000,
+        port=5001,
         threaded=True,
         # SECURITY: In production, use a production WSGI server like gunicorn
-        # Example: gunicorn -w 4 -b 127.0.0.1:5000 web_ui:app
+        # Example: gunicorn -w 4 -b 127.0.0.1:5001 web_ui:app
     )

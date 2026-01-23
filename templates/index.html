@@ -352,8 +352,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Voice-to-SQL Agent</h1>
-            <p>Convert natural language questions into SQL queries with AI</p>
+            <h1>🤖 Multi-Agent AI Platform</h1>
+            <p>Ask questions about SQL, C#, Epicor P21, or anything else - AI agents collaborate to help you</p>
             <div id="status-indicator" class="status-indicator status-error">
                 Checking system status...
             </div>
@@ -366,48 +366,56 @@
                 <div class="instructions">
                     <h3>📝 How to Use:</h3>
                     <ul>
-                        <li>Type a natural language question about the database</li>
-                        <li>The agent will generate SQL using Claude AI</li>
-                        <li>Watch the log panel for real-time progress</li>
-                        <li>Results will appear below</li>
+                        <li>Ask any question - SQL, C#, P21, or general topics</li>
+                        <li>AI agents <span class="agent-sql">SQL</span> <span class="agent-csharp">C#</span> <span
+                                class="agent-epicor">P21</span> <span class="agent-badge"
+                                style="background: #ec4899; color: white;">General</span> will collaborate</li>
+                        <li>Watch the log panel for real-time agent activity</li>
+                        <li>Get code, queries, explanations, and insights</li>
                     </ul>
                 </div>
 
                 <div class="example-queries">
-                    <h4>SQL Examples:</h4>
+                    <h4>💬 General AI Chat:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">What is the difference between AI and ML?</span>
+                    <span class="example-tag" onclick="setQuery(this)">Explain REST APIs in simple terms</span>
+                    <span class="example-tag" onclick="setQuery(this)">How can I improve team productivity?</span>
+                    <span class="example-tag" onclick="setQuery(this)">What are agile best practices?</span>
+                </div>
+
+                <div class="example-queries" style="margin-top: 15px;">
+                    <h4>🗄️ SQL Database:</h4>
                     <span class="example-tag" onclick="setQuery(this)">How many products do we have?</span>
                     <span class="example-tag" onclick="setQuery(this)">Show me all orders from last month</span>
                     <span class="example-tag" onclick="setQuery(this)">What are the top 5 customers by sales?</span>
-                    <span class="example-tag" onclick="setQuery(this)">List products under $50</span>
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>C#/.NET Examples:</h4>
-                    <span class="example-tag" onclick="setQuery(this)">How do I create a List in C#?</span>
-                    <span class="example-tag" onclick="setQuery(this)">Write a LINQ query to filter users</span>
-                    <span class="example-tag" onclick="setQuery(this)">Explain async/await in C#</span>
-                    <span class="example-tag" onclick="setQuery(this)">Create an ASP.NET Core controller</span>
+                    <h4>💻 C#/.NET Code:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">Write async LINQ query</span>
+                    <span class="example-tag" onclick="setQuery(this)">Create Entity Framework migration</span>
+                    <span class="example-tag" onclick="setQuery(this)">Explain dependency injection in .NET</span>
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>Epicor P21 Examples:</h4>
+                    <h4>📦 Epicor P21:</h4>
                     <span class="example-tag" onclick="setQuery(this)">How do I export P21 sales data?</span>
                     <span class="example-tag" onclick="setQuery(this)">P21 API authentication example</span>
-                    <span class="example-tag" onclick="setQuery(this)">Query P21 customer table</span>
+                    <span class="example-tag" onclick="setQuery(this)">Query P21 customer table structure</span>
                 </div>
 
                 <div class="example-queries" style="margin-top: 15px;">
-                    <h4>🤝 Multi-Agent Collaboration:</h4>
-                    <span class="example-tag" onclick="setQuery(this)">Write C# code to query P21 database</span>
-                    <span class="example-tag" onclick="setQuery(this)">Build a P21 integration API with async operations</span>
-                    <span class="example-tag" onclick="setQuery(this)">Export P21 orders using C# and SQL</span>
+                    <h4>🤝 Multi-Agent Tasks:</h4>
+                    <span class="example-tag" onclick="setQuery(this)">Build P21 integration API with C# and SQL</span>
+                    <span class="example-tag" onclick="setQuery(this)">Create data export pipeline for P21</span>
+                    <span class="example-tag" onclick="setQuery(this)">Design database schema with C# models</span>
                 </div>
 
                 <textarea id="query-input" class="query-input" rows="4"
-                    placeholder="Enter your question here..."></textarea>
+                    placeholder="Ask anything - SQL, C#, P21, or general questions..."></textarea>
 
                 <button id="submit-btn" class="button" onclick="submitQuery()">
-                    🚀 Generate SQL & Execute
+                    🤖 Ask AI Agents
                 </button>
 
                 <button class="button button-secondary" onclick="testConnection()">
@@ -522,7 +530,7 @@
                 .then(r => r.json())
                 .then(data => {
                     btn.disabled = false;
-                    btn.innerHTML = '🚀 Generate SQL & Execute';
+                    btn.innerHTML = '🤖 Ask AI Agents';
 
                     if (data.success) {
                         showResults(data);
@@ -532,7 +540,7 @@
                 })
                 .catch(err => {
                     btn.disabled = false;
-                    btn.innerHTML = '🚀 Generate SQL & Execute';
+                    btn.innerHTML = '🤖 Ask AI Agents';
                     showError('Request failed: ' + err.message);
                 });
         }
@@ -568,12 +576,12 @@
             // Show multi-agent collaboration
             if (data.collaboration_session && data.collaboration_session.messages) {
                 html += `<h3>🤝 Agent Collaboration</h3>`;
-                
+
                 data.collaboration_session.messages.forEach((msg, idx) => {
-                    const agentClass = msg.agent.toLowerCase().includes('sql') ? 'sql' : 
-                                     msg.agent.toLowerCase().includes('csharp') || msg.agent.toLowerCase().includes('c#') ? 'csharp' : 
-                                     msg.agent.toLowerCase().includes('epicor') || msg.agent.toLowerCase().includes('p21') ? 'epicor' : 'sql';
-                    
+                    const agentClass = msg.agent.toLowerCase().includes('sql') ? 'sql' :
+                        msg.agent.toLowerCase().includes('csharp') || msg.agent.toLowerCase().includes('c#') ? 'csharp' :
+                            msg.agent.toLowerCase().includes('epicor') || msg.agent.toLowerCase().includes('p21') ? 'epicor' : 'sql';
+
                     html += `
                         <div style="margin: 20px 0; padding: 15px; background: #f9fafb; border-left: 4px solid var(--agent-color); border-radius: 8px;">
                             <h4 style="margin: 0 0 10px 0;">
